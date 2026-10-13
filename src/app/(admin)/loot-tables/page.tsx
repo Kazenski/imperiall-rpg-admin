@@ -34,6 +34,7 @@ export default function LootTablesPage() {
 
   useEffect(() => { load(); listMobs().then(setMobs); listStages().then(setStages); listItems().then(setItems) }, [])
 
+
   const handleEdit = (table: any) => {
     setEditing(table)
     setForm({

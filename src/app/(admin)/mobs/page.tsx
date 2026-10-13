@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { listMobs, createMob, updateMob, deleteMob } from '@/lib/actions/mobs'
 
 const TIERS = ['normal','elite','boss','mini_boss']
@@ -22,7 +22,7 @@ export default function MobsPage() {
 
   const load = () => listMobs().then(setMobs)
 
-  useState(() => { load() })
+  useEffect(() => { load() }, [])
 
   const handleEdit = (mob: any) => {
     setEditing(mob)

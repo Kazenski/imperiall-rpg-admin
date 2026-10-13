@@ -28,6 +28,7 @@ export default function StagesPage() {
 
   useEffect(() => { load() }, [])
 
+
   const handleEdit = (stage: any) => {
     setEditing(stage)
     setForm({

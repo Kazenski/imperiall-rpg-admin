@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { listItems, createItem, updateItem, deleteItem } from '@/lib/actions/items'
 import { useTransition } from 'react'
 
@@ -21,7 +21,7 @@ export default function ItemsPage() {
   const [isPending, startTransition] = useTransition()
 
   const load = () => listItems().then(setItems)
-  useState(() => { load() })
+  useEffect(() => { load() }, [])
 
   const handleEdit = (item: any) => {
     setEditing(item)

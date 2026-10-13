@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { listSkills, createSkill, updateSkill, deleteSkill } from '@/lib/actions/skills'
 
 const SKILL_TYPES = ['active','passive']
@@ -20,7 +20,7 @@ export default function SkillsPage() {
   const [isPending, startTransition] = useTransition()
 
   const load = () => listSkills().then(setSkills)
-  useState(() => { load() })
+  useEffect(() => { load() }, [])
 
   const handleEdit = (skill: any) => {
     setEditing(skill)
