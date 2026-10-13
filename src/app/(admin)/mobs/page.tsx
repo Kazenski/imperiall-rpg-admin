@@ -1,11 +1,12 @@
 ﻿'use client'
 
 import { useState, useEffect, useTransition } from 'react'
-import { listMobs, createMob, updateMob, deleteMob } from '@/lib/actions/mobs'
+import { listMobs, createMob, updateMob, deleteMob, duplicateMob } from '@/lib/actions/mobs'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
-import { Sword, Shield, Heart, Coins, Star, Plus, Pencil, Trash2, Zap, Eye } from 'lucide-react'
+import { suggestMobStats } from '@/lib/balance'
+import { Sword, Shield, Heart, Coins, Star, Plus, Pencil, Trash2, Zap, Eye, Sparkles } from 'lucide-react'
 
 const TIERS: Record<string, { label: string; color: string }> = {
   normal: { label: 'Normal', color: '#9ca3af' },
@@ -29,6 +30,21 @@ export default function MobsPage() {
   const [form, setForm] = useState(emptyForm)
   const [isPending, startTransition] = useTransition()
   const [viewing, setViewing] = useState<any>(null)
+  const [refLevel, setRefLevel] = useState(5)
+
+  function applySuggestion() {
+    const s = suggestMobStats(form.tier, refLevel)
+    setForm({
+      ...form,
+      hp: s.hp,
+      atk: s.atk,
+      def: s.def,
+      exp_reward: s.exp_reward,
+      gold_reward: s.gold_reward,
+      attack_cooldown_ms: s.attack_cooldown_ms,
+      scale: s.scale,
+    })
+  }
 
   const load = () => listMobs().then(setMobs)
   useEffect(() => { load() }, [])
@@ -59,6 +75,10 @@ export default function MobsPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('Excluir este inimigo?')) startTransition(() => deleteMob(id).then(load))
+  }
+
+  const handleDuplicate = (id: string) => {
+    startTransition(() => duplicateMob(id).then(load).catch((e) => alert('Falha ao duplicar: ' + (e?.message || e))))
   }
 
   return (
@@ -93,6 +113,16 @@ export default function MobsPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="border rounded p-4 mb-4 space-y-3">
+          <div className="flex items-end gap-2 rounded bg-muted/60 p-3">
+            <div>
+              <label className="text-sm font-medium">Nível de referência <Tooltip text="Nível do jogador que vai enfrentar este inimigo. Usado só para calcular a sugestão — não é salvo." /></label>
+              <input type="number" min={1} max={100} value={refLevel} onChange={e => setRefLevel(Number(e.target.value) || 1)} className="w-24 border rounded px-2 py-1" />
+            </div>
+            <button type="button" onClick={applySuggestion} className="px-3 py-1.5 rounded border bg-background hover:bg-muted inline-flex items-center gap-1 text-sm">
+              <Sparkles size={14} /> Sugerir valores
+            </button>
+            <p className="text-xs text-muted-foreground">Preenche HP/ATK/DEF/EXP/ouro pelo tier + nível.</p>
+          </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-sm">Slug <Tooltip text="Identificador único (sem espaços). Ex.: slime_verde, dragao_fogo" /></label>
@@ -198,6 +228,7 @@ export default function MobsPage() {
                 <td className="p-2 flex gap-2">
                   <button onClick={() => setViewing(mob)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(mob)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleDuplicate(mob.id)} className="underline inline-flex items-center gap-1" title="Cria uma cópia com novo slug">Duplicar</button>
                   <button onClick={() => handleDelete(mob.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>

@@ -8,6 +8,66 @@ export default function GuiaPage() {
         <p className="text-muted-foreground mt-1">Como cadastrar cada entidade do jogo com exemplos práticos</p>
       </div>
 
+      {/* TUTORIAL PASSO A PASSO */}
+      <section className="border rounded p-6 space-y-4 bg-muted/30">
+        <h3 className="text-lg font-semibold">Tutorial: do zero ao primeiro mob jogável</h3>
+        <p className="text-sm text-muted-foreground">Siga nesta ordem. Cada passo leva 2 a 5 minutos.</p>
+        <ol className="space-y-4 text-sm">
+          <li className="flex gap-3">
+            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground inline-flex items-center justify-center font-bold">1</span>
+            <div>
+              <strong>Gere a imagem (fora do admin).</strong>
+              <p className="text-muted-foreground mt-1">No PixAI ou SeaArt, gere o sprite em PNG. Ex.: "2D anime game sprite, green slime, idle stance, solid transparent background". Baixe o PNG com fundo transparente (128x128 para ícone, 256x256 para mob).</p>
+            </div>
+          </li>
+          <li className="flex gap-3">
+            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground inline-flex items-center justify-center font-bold">2</span>
+            <div>
+              <strong>Cadastre o item ou mob no menu correspondente.</strong>
+              <p className="text-muted-foreground mt-1">Clique em <strong>+ Novo</strong>, preencha slug (ex.: <code>slime_verde</code>) e nome. Dica: use o botão <strong>Sugerir valores</strong> informando o nível do jogador — ele preenche HP/ATK/DEF/EXP/ouro pelo equilíbrio.</p>
+            </div>
+          </li>
+          <li className="flex gap-3">
+            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground inline-flex items-center justify-center font-bold">3</span>
+            <div>
+              <strong>Envie a imagem no campo de upload.</strong>
+              <p className="text-muted-foreground mt-1">Arraste o PNG para a área tracejada ou clique para escolher. A <strong>pré-visualização aparece antes de salvar</strong> — confira se o fundo está transparente e a imagem nítida. Só então clique em Criar.</p>
+            </div>
+          </li>
+          <li className="flex gap-3">
+            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground inline-flex items-center justify-center font-bold">4</span>
+            <div>
+              <strong>Confira na lista.</strong>
+              <p className="text-muted-foreground mt-1">A linha nova aparece com <strong>miniatura</strong>. Clique no <strong>nome</strong> para abrir o detalhe com a imagem grande. Se a miniatura quebrou, a URL está errada — edite e reenvie.</p>
+            </div>
+          </li>
+          <li className="flex gap-3">
+            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground inline-flex items-center justify-center font-bold">5</span>
+            <div>
+              <strong>Monte a fase: Zona → Fase → Onda → Loot.</strong>
+              <p className="text-muted-foreground mt-1">Crie a Zona, depois a Fase dentro dela, depois a Onda com o mob, depois a Tabela de Loot com os drops. Essa é a cadeia completa até o jogo.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      {/* O QUE É SLUG */}
+      <section className="border rounded p-6 space-y-3">
+        <h3 className="text-lg font-semibold">O que é Slug?</h3>
+        <p className="text-sm text-muted-foreground">O <strong>slug</strong> é o identificador que o código do jogo usa para encontrar o registro. O jogador nunca vê o slug — ele vê o <strong>nome</strong>.</p>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="border rounded p-3">
+            <div className="font-semibold">Nome (jogador vê)</div>
+            <div className="text-muted-foreground">Espada de Aço Lendária</div>
+          </div>
+          <div className="border rounded p-3">
+            <div className="font-semibold">Slug (código usa)</div>
+            <div className="text-muted-foreground"><code>espada_aco_lendaria</code></div>
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground">Regras: minúsculas, sem espaço, sem acento, use underscore. <strong>Nunca mude o slug depois de criado</strong> — o jogo para de encontrar o registro.</p>
+      </section>
+
       {/* ITENS */}
       <section className="border rounded p-6 space-y-4">
         <h3 className="text-lg font-semibold">Itens</h3>

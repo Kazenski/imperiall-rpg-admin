@@ -3,9 +3,10 @@
 import { useState, useEffect, useTransition } from 'react'
 import { listSkills, createSkill, updateSkill, deleteSkill } from '@/lib/actions/skills'
 import { Tooltip } from '@/components/ui/tooltip'
-import { Zap, Plus, Pencil, Trash2, Eye } from 'lucide-react'
+import { Zap, Plus, Pencil, Trash2, Eye, Sparkles } from 'lucide-react'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
+import { suggestSkillStats } from '@/lib/balance'
 
 const SKILL_TYPES: Record<string, string> = { active: 'Ativa', passive: 'Passiva' }
 const TARGETS: Record<string, string> = {
@@ -26,6 +27,12 @@ export default function SkillsPage() {
   const [form, setForm] = useState(emptyForm)
   const [isPending, startTransition] = useTransition()
   const [viewing, setViewing] = useState<any>(null)
+  const [refLevel, setRefLevel] = useState(5)
+
+  function applySuggestion() {
+    const s = suggestSkillStats(refLevel)
+    setForm({ ...form, cooldown_ms: s.cooldown_ms, mana_cost: s.mana_cost, base_damage: s.base_damage })
+  }
 
   const load = () => listSkills().then(setSkills)
   useEffect(() => { load() }, [])
@@ -69,6 +76,16 @@ export default function SkillsPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="border rounded p-4 mb-4 space-y-3">
+          <div className="flex items-end gap-2 rounded bg-muted/60 p-3">
+            <div>
+              <label className="text-sm font-medium">Nível de referência <Tooltip text="Nível do jogador para o qual esta skill é adequada. Usado só para calcular a sugestão — não é salvo." /></label>
+              <input type="number" min={1} max={100} value={refLevel} onChange={e => setRefLevel(Number(e.target.value) || 1)} className="w-24 border rounded px-2 py-1" />
+            </div>
+            <button type="button" onClick={applySuggestion} className="px-3 py-1.5 rounded border bg-background hover:bg-muted inline-flex items-center gap-1 text-sm">
+              <Sparkles size={14} /> Sugerir valores
+            </button>
+            <p className="text-xs text-muted-foreground">Preenche recarga/mana/dano pelo nível.</p>
+          </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-sm">Slug <Tooltip text="Identificador único. Ex.: golpe_poderoso, cura_basica" /></label>

@@ -16,7 +16,7 @@ export function Tooltip({ text }: { text: string }) {
         ?
       </button>
       {show && (
-        <span className="absolute left-6 top-0 z-50 w-64 p-2 bg-popover text-popover-foreground text-xs rounded border shadow-lg normal-case font-normal">
+        <span className="absolute left-6 top-0 z-50 w-64 p-2 rounded-md border border-zinc-700 shadow-xl text-xs normal-case font-normal bg-zinc-900 text-zinc-100">
           {text}
         </span>
       )}

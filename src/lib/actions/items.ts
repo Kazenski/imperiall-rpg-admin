@@ -65,3 +65,18 @@ export async function deleteItem(id: string) {
   revalidatePath('/items')
 }
 
+/** Duplica um item com novo slug (útil para criar variações). */
+export async function duplicateItem(id: string) {
+  const { data, error } = await supabase.from('items').select('*').eq('id', id).single()
+  if (error || !data) throw error || new Error('Item não encontrado')
+  const { id: _drop, created_at: _c, updated_at: _u, ...rest } = data
+  const stamp = Date.now().toString(36)
+  const { error: insErr } = await supabase.from('items').insert({
+    ...rest,
+    slug: `${data.slug}-copia-${stamp}`,
+    name: `${data.name} (cópia)`,
+  })
+  if (insErr) throw insErr
+  revalidatePath('/items')
+}
+

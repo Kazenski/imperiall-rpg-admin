@@ -8,6 +8,7 @@ export default function AdminNav() {
     { href: '/stages', label: 'Fases' },
     { href: '/waves', label: 'Ondas' },
     { href: '/loot-tables', label: 'Loot' },
+    { href: '/usuarios', label: 'Usuários' },
     { href: '/guia', label: 'Guia' },
   ]
   return (

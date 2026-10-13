@@ -73,3 +73,18 @@ export async function deleteMob(id: string) {
   revalidatePath('/mobs')
 }
 
+/** Duplica um inimigo com novo slug (útil para criar variações). */
+export async function duplicateMob(id: string) {
+  const { data, error } = await supabase.from('mobs').select('*').eq('id', id).single()
+  if (error || !data) throw error || new Error('Inimigo não encontrado')
+  const { id: _drop, created_at: _c, updated_at: _u, ...rest } = data
+  const stamp = Date.now().toString(36)
+  const { error: insErr } = await supabase.from('mobs').insert({
+    ...rest,
+    slug: `${data.slug}-copia-${stamp}`,
+    name: `${data.name} (cópia)`,
+  })
+  if (insErr) throw insErr
+  revalidatePath('/mobs')
+}
+

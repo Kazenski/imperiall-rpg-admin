@@ -1,12 +1,13 @@
 ﻿'use client'
 
 import { useState, useEffect } from 'react'
-import { listItems, createItem, updateItem, deleteItem } from '@/lib/actions/items'
+import { listItems, createItem, updateItem, deleteItem, duplicateItem } from '@/lib/actions/items'
 import { useTransition } from 'react'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
-import { Sword, Shield, Heart, Coins, Gem, Plus, Pencil, Trash2, Eye } from 'lucide-react'
+import { suggestItemStats } from '@/lib/balance'
+import { Sword, Shield, Heart, Coins, Gem, Plus, Pencil, Trash2, Eye, Sparkles } from 'lucide-react'
 
 const ITEM_TYPES: Record<string, string> = {
   weapon: 'Arma', helmet: 'Capacete', chest: 'Peitoral', gloves: 'Luvas',
@@ -39,6 +40,19 @@ export default function ItemsPage() {
   const [form, setForm] = useState(emptyForm)
   const [isPending, startTransition] = useTransition()
   const [viewing, setViewing] = useState<any>(null)
+  const [refLevel, setRefLevel] = useState(5)
+
+  function applySuggestion() {
+    const s = suggestItemStats(form.rarity, form.type, refLevel)
+    setForm({
+      ...form,
+      atk: String(s.atk),
+      def: String(s.def),
+      hp: String(s.hp),
+      crit: String(s.crit),
+      price_gold: s.price_gold,
+    })
+  }
 
   const load = () => listItems().then(setItems)
   useEffect(() => { load() }, [])
@@ -71,6 +85,10 @@ export default function ItemsPage() {
     if (confirm('Excluir este item?')) startTransition(() => deleteItem(id).then(load))
   }
 
+  const handleDuplicate = (id: string) => {
+    startTransition(() => duplicateItem(id).then(load).catch((e) => alert('Falha ao duplicar: ' + (e?.message || e))))
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -99,6 +117,16 @@ export default function ItemsPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="border rounded p-4 mb-4 space-y-3">
+          <div className="flex items-end gap-2 rounded bg-muted/60 p-3">
+            <div>
+              <label className="text-sm font-medium">Nível de referência <Tooltip text="Nível do jogador para o qual este item é adequado. Usado só para calcular a sugestão — não é salvo." /></label>
+              <input type="number" min={1} max={100} value={refLevel} onChange={e => setRefLevel(Number(e.target.value) || 1)} className="w-24 border rounded px-2 py-1" />
+            </div>
+            <button type="button" onClick={applySuggestion} className="px-3 py-1.5 rounded border bg-background hover:bg-muted inline-flex items-center gap-1 text-sm">
+              <Sparkles size={14} /> Sugerir valores
+            </button>
+            <p className="text-xs text-muted-foreground">Preenche ATK/DEF/HP/CRIT/preço pelo equilíbrio do Guia.</p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm">Slug <Tooltip text="Identificador único do item (sem espaços). Usado no código do jogo. Ex.: espada_aco_comum" /></label>
@@ -220,6 +248,7 @@ export default function ItemsPage() {
                 <td className="p-2 flex gap-2">
                   <button onClick={() => setViewing(item)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(item)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleDuplicate(item.id)} className="underline inline-flex items-center gap-1" title="Cria uma cópia com novo slug">Duplicar</button>
                   <button onClick={() => handleDelete(item.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>
