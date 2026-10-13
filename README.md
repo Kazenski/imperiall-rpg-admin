@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Imperiall RPG — Admin
 
-## Getting Started
+Painel administrativo para gerenciar o catálogo do jogo Imperiall RPG (ARPG mobile).
 
-First, run the development server:
+## Stack
+
+- **Next.js 15** (App Router)
+- **TypeScript**
+- **Tailwind CSS**
+- **Supabase** (auth + database + storage)
+- **React Hook Form + Zod** (validação)
+- **Lucide React** (ícones)
+- **Sonner** (toasts)
+
+## Configuração local
 
 ```bash
+npm install
+cp .env.example .env.local
+# preencha NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy (Vercel)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Importe o repositório na [Vercel](https://vercel.com/new)
+2. Adicione as environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Deploy automático a cada push
 
-## Learn More
+## Estrutura
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/(admin)/     # Páginas protegidas (admin guard)
+    items/         # CRUD de itens
+    mobs/          # CRUD de inimigos
+    skills/        # CRUD de habilidades
+    stages/        # CRUD de zonas + stages
+    waves/         # CRUD de waves + wave_mobs
+    loot-tables/   # CRUD de loot tables + entries
+  components/
+    layout/        # Nav e layout do admin
+  lib/
+    actions/       # Server actions (CRUD)
+    supabase/      # Client Supabase
+    types/         # Tipos TypeScript
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Papel admin
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Para acessar o painel, o usuário precisa ter `role = 'admin'` na tabela `profiles`.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```sql
+update public.profiles set role = 'admin' where id = '<uuid>';
+```
