@@ -7,6 +7,7 @@ import { Zap, Plus, Pencil, Trash2, Eye, Sparkles } from 'lucide-react'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
 import { suggestSkillStats } from '@/lib/balance'
+import { listEffects, listSkillEffects, addSkillEffect, deleteSkillEffect } from '@/lib/actions/effects'
 
 const SKILL_TYPES: Record<string, string> = { active: 'Ativa', passive: 'Passiva' }
 const TARGETS: Record<string, string> = {
@@ -28,6 +29,15 @@ export default function SkillsPage() {
   const [isPending, startTransition] = useTransition()
   const [viewing, setViewing] = useState<any>(null)
   const [refLevel, setRefLevel] = useState(5)
+  const [allEffects, setAllEffects] = useState<any[]>([])
+  const [usedEffects, setUsedEffects] = useState<any[]>([])
+  const [effPick, setEffPick] = useState({ effect_id: '', value: 0 })
+
+  const openDetail = (s: any) => {
+    setViewing(s)
+    listEffects().then(setAllEffects).catch(() => {})
+    listSkillEffects(s.id).then(setUsedEffects).catch(() => setUsedEffects([]))
+  }
 
   function applySuggestion() {
     const s = suggestSkillStats(refLevel)
@@ -171,14 +181,14 @@ export default function SkillsPage() {
                     : <span className="text-muted-foreground text-xs">—</span>}
                 </td>
                 <td className="p-2 font-medium">
-                  <button onClick={() => setViewing(skill)} className="underline underline-offset-2 hover:text-primary text-left">{skill.name}</button>
+                  <button onClick={() => openDetail(skill)} className="underline underline-offset-2 hover:text-primary text-left">{skill.name}</button>
                 </td>
                 <td className="p-2">{SKILL_TYPES[skill.type] || skill.type}</td>
                 <td className="p-2">{TARGETS[skill.target] || skill.target}</td>
                 <td className="p-2">{skill.cooldown_ms}ms</td><td className="p-2">{skill.mana_cost}</td><td className="p-2">{skill.base_damage}</td>
                 <td className="p-2">{skill.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
-                  <button onClick={() => setViewing(skill)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
+                  <button onClick={() => openDetail(skill)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(skill)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
                   <button onClick={() => handleDelete(skill.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
@@ -195,11 +205,28 @@ export default function SkillsPage() {
           <DetailRow label="Tipo / Alvo" value={`${SKILL_TYPES[viewing.type] || viewing.type} / ${TARGETS[viewing.target] || viewing.target}`} />
           <DetailRow label="Recarga / Mana / Dano" value={`${viewing.cooldown_ms}ms / ${viewing.mana_cost} / ${viewing.base_damage}`} />
           <DetailRow label="Animação" value={<code>{viewing.animation_key || '—'}</code>} />
-          <DetailRow label="Efeitos" value={<code className="text-xs">{JSON.stringify(viewing.effects || {})}</code>} />
           <DetailRow label="Descrição" value={viewing.description || '—'} />
           <DetailRow label="Ativa" value={viewing.is_active ? 'Sim' : 'Não'} />
+
+          <h4 className="font-semibold mt-4 mb-1">Efeitos desta skill <Tooltip text="Selecione um efeito do catálogo e informe o valor personalizado. Ex.: Atordoar por 1000ms, Cura de 80." /></h4>
+          {usedEffects.map((ue: any) => (
+            <div key={ue.id} className="flex justify-between text-sm py-1 border-b last:border-0">
+              <span>{ue.effects?.name}: <strong>{String(ue.value)}</strong></span>
+              <button onClick={() => startTransition(() => deleteSkillEffect(ue.id).then(() => listSkillEffects(viewing.id).then(setUsedEffects)))} className="text-red-600 underline text-xs">Remover</button>
+            </div>
+          ))}
+          {usedEffects.length === 0 && <p className="text-xs text-muted-foreground">Nenhum efeito vinculado. O campo effects antigo (JSON) foi descontinuado.</p>}
+          <form onSubmit={(e) => { e.preventDefault(); startTransition(async () => { const fd = new FormData(); fd.set('skill_id', viewing.id); fd.set('effect_id', effPick.effect_id); fd.set('value', String(effPick.value)); await addSkillEffect(fd); setEffPick({ effect_id: '', value: 0 }); listSkillEffects(viewing.id).then(setUsedEffects) }) }} className="flex gap-2 mt-2">
+            <select value={effPick.effect_id} onChange={e => setEffPick({ ...effPick, effect_id: e.target.value })} className="flex-1 border rounded px-2 py-1 text-sm" required>
+              <option value="">Efeito…</option>
+              {allEffects.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
+            <input type="number" step="0.01" value={effPick.value} onChange={e => setEffPick({ ...effPick, value: Number(e.target.value) })} className="w-24 border rounded px-2 py-1 text-sm" title="Valor personalizado" />
+            <button type="submit" className="px-3 py-1 border rounded text-sm">Adicionar</button>
+          </form>
         </DetailModal>
       )}
     </div>
   )
 }
+

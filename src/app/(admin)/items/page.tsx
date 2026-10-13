@@ -7,6 +7,7 @@ import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
 import { suggestItemStats } from '@/lib/balance'
+import { listEffects, listItemEffects, addItemEffect, deleteItemEffect } from '@/lib/actions/effects'
 import { Sword, Shield, Heart, Coins, Gem, Plus, Pencil, Trash2, Eye, Sparkles } from 'lucide-react'
 
 const ITEM_TYPES: Record<string, string> = {
@@ -41,6 +42,15 @@ export default function ItemsPage() {
   const [isPending, startTransition] = useTransition()
   const [viewing, setViewing] = useState<any>(null)
   const [refLevel, setRefLevel] = useState(5)
+  const [allEffects, setAllEffects] = useState<any[]>([])
+  const [usedEffects, setUsedEffects] = useState<any[]>([])
+  const [effPick, setEffPick] = useState({ effect_id: '', value: 0 })
+
+  const openDetail = (item: any) => {
+    openDetail(item)
+    listEffects().then(setAllEffects).catch(() => {})
+    listItemEffects(item.id).then(setUsedEffects).catch(() => setUsedEffects([]))
+  }
 
   function applySuggestion() {
     const s = suggestItemStats(form.rarity, form.type, refLevel)
@@ -238,7 +248,7 @@ export default function ItemsPage() {
                     : <span className="text-muted-foreground text-xs">—</span>}
                 </td>
                 <td className="p-2 font-medium">
-                  <button onClick={() => setViewing(item)} className="underline underline-offset-2 hover:text-primary text-left">{item.name}</button>
+                  <button onClick={() => openDetail(item)} className="underline underline-offset-2 hover:text-primary text-left">{item.name}</button>
                 </td>
                 <td className="p-2">{ITEM_TYPES[item.type] || item.type}</td>
                 <td className="p-2"><span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: RARITIES[item.rarity]?.color + '20', color: RARITIES[item.rarity]?.color }}>{RARITIES[item.rarity]?.label || item.rarity}</span></td>
@@ -246,7 +256,7 @@ export default function ItemsPage() {
                 <td className="p-2">{item.price_gold > 0 ? `${item.price_gold} ouro` : ''} {item.price_gems > 0 ? `${item.price_gems} gemas` : ''}</td>
                 <td className="p-2">{item.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
-                  <button onClick={() => setViewing(item)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
+                  <button onClick={() => openDetail(item)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(item)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
                   <button onClick={() => handleDuplicate(item.id)} className="underline inline-flex items-center gap-1" title="Cria uma cópia com novo slug">Duplicar</button>
                   <button onClick={() => handleDelete(item.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
@@ -271,8 +281,26 @@ export default function ItemsPage() {
           <DetailRow label="Empilhável" value={viewing.stackable ? `Sim (máx ${viewing.max_stack})` : 'Não'} />
           <DetailRow label="Descrição" value={viewing.description || '—'} />
           <DetailRow label="Ativo" value={viewing.is_active ? 'Sim' : 'Não'} />
+
+          <h4 className="font-semibold mt-4 mb-1">Efeitos deste item <Tooltip text="Ex.: poção com efeito Cura de 50. Selecione o efeito e informe o valor." /></h4>
+          {usedEffects.map((ue: any) => (
+            <div key={ue.id} className="flex justify-between text-sm py-1 border-b last:border-0">
+              <span>{ue.effects?.name}: <strong>{String(ue.value)}</strong></span>
+              <button onClick={() => startTransition(() => deleteItemEffect(ue.id).then(() => listItemEffects(viewing.id).then(setUsedEffects)))} className="text-red-600 underline text-xs">Remover</button>
+            </div>
+          ))}
+          {usedEffects.length === 0 && <p className="text-xs text-muted-foreground">Nenhum efeito vinculado.</p>}
+          <form onSubmit={(e) => { e.preventDefault(); startTransition(async () => { const fd = new FormData(); fd.set('item_id', viewing.id); fd.set('effect_id', effPick.effect_id); fd.set('value', String(effPick.value)); await addItemEffect(fd); setEffPick({ effect_id: '', value: 0 }); listItemEffects(viewing.id).then(setUsedEffects) }) }} className="flex gap-2 mt-2">
+            <select value={effPick.effect_id} onChange={e => setEffPick({ ...effPick, effect_id: e.target.value })} className="flex-1 border rounded px-2 py-1 text-sm" required>
+              <option value="">Efeito…</option>
+              {allEffects.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
+            <input type="number" step="0.01" value={effPick.value} onChange={e => setEffPick({ ...effPick, value: Number(e.target.value) })} className="w-24 border rounded px-2 py-1 text-sm" title="Valor personalizado" />
+            <button type="submit" className="px-3 py-1 border rounded text-sm">Adicionar</button>
+          </form>
         </DetailModal>
       )}
     </div>
   )
 }
+

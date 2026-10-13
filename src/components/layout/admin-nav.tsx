@@ -8,6 +8,13 @@ export default function AdminNav() {
     { href: '/stages', label: 'Fases' },
     { href: '/waves', label: 'Ondas' },
     { href: '/loot-tables', label: 'Loot' },
+    { href: '/npcs', label: 'NPCs' },
+    { href: '/historias', label: 'Histórias' },
+    { href: '/efeitos', label: 'Efeitos' },
+    { href: '/personagens', label: 'Heróis' },
+    { href: '/arvore', label: 'Árvore' },
+    { href: '/profissoes', label: 'Profissões' },
+    { href: '/receitas', label: 'Craft' },
     { href: '/usuarios', label: 'Usuários' },
     { href: '/guia', label: 'Guia' },
   ]
