@@ -87,7 +87,7 @@ export default function HistoriasPage() {
             <div><label className="text-sm">Nome</label><input name="name" defaultValue={storyForm.name} className="w-full border rounded px-2 py-1" required /></div>
             <div><label className="text-sm">Ordem</label><input name="sort_order" type="number" defaultValue={storyForm.sort_order} className="w-full border rounded px-2 py-1" /></div>
           </div>
-          <ImageUpload label="Capa da história" fieldName="cover_url" tooltipText="Imagem de capa 16:9 exibida na lista de histórias do app." folder="stories" value={storyForm.cover_url} onChange={(url) => setStoryForm({ ...storyForm, cover_url: url })} hint="JPG ou PNG 1280x720 (limite 1920px)" maxSize={1920} /> accept="image/png,image/jpeg,image/webp" />
+          <ImageUpload label="Capa da história" fieldName="cover_url" tooltipText="Imagem de capa 16:9 exibida na lista de histórias do app." folder="stories" value={storyForm.cover_url} onChange={(url) => setStoryForm({ ...storyForm, cover_url: url })} hint="JPG ou PNG 1280x720 (limite 1920px)" maxSize={1920} accept="image/png,image/jpeg,image/webp" />
           <div><label className="text-sm">Descrição</label><textarea name="description" defaultValue={storyForm.description} className="w-full border rounded px-2 py-1" /></div>
           <label className="flex items-center gap-2"><input type="checkbox" name="is_active" defaultChecked={storyForm.is_active} /> Ativa</label>
           <div className="flex gap-2">
@@ -120,7 +120,7 @@ export default function HistoriasPage() {
                 <div><label className="text-sm">Ordem <Tooltip text="0 = primeira cena. O app segue esta ordem salvo quando uma escolha pula." /></label><input type="number" value={sceneForm.order_index} onChange={e => setSceneForm({ ...sceneForm, order_index: Number(e.target.value) })} className="w-full border rounded px-2 py-1" /></div>
                 <div className="col-span-2"><label className="text-sm">Título da cena</label><input value={sceneForm.title} onChange={e => setSceneForm({ ...sceneForm, title: e.target.value })} className="w-full border rounded px-2 py-1" placeholder="Ex.: A taverna" /></div>
               </div>
-              <ImageUpload label="Fundo da cena" fieldName="background_url" tooltipText="Imagem de fundo 16:9 atrás da caixa de diálogo." folder="stories" value={sceneForm.background_url} onChange={(url) => setSceneForm({ ...sceneForm, background_url: url })} hint="JPG ou PNG 1280x720 (limite 1920px)" maxSize={1920} /> accept="image/png,image/jpeg,image/webp" />
+              <ImageUpload label="Fundo da cena" fieldName="background_url" tooltipText="Imagem de fundo 16:9 atrás da caixa de diálogo." folder="stories" value={sceneForm.background_url} onChange={(url) => setSceneForm({ ...sceneForm, background_url: url })} hint="JPG ou PNG 1280x720 (limite 1920px)" maxSize={1920} accept="image/png,image/jpeg,image/webp" />
               <div className="flex gap-2">
                 <button type="submit" disabled={isPending} className="px-4 py-2 bg-primary text-primary-foreground rounded disabled:opacity-50">Salvar cena</button>
                 <button type="button" onClick={() => setShowSceneForm(false)} className="px-4 py-2 border rounded">Cancelar</button>
