@@ -66,7 +66,7 @@ export default function NpcsPage() {
               <input name="sort_order" type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: Number(e.target.value) })} className="w-full border rounded px-2 py-1" />
             </div>
             <div className="col-span-2">
-              <ImageUpload label="Retrato do NPC" fieldName="portrait_url" tooltipText="Rosto do NPC exibido na caixa de diálogo. PNG 256x256 ou 512x512." folder="npcs" value={form.portrait_url} onChange={(url) => setForm({ ...form, portrait_url: url })} hint="PNG retrato 512x512" />
+              <ImageUpload label="Retrato do NPC" fieldName="portrait_url" tooltipText="Rosto do NPC exibido na caixa de diálogo. PNG 256x256 ou 512x512." folder="npcs" value={form.portrait_url} onChange={(url) => setForm({ ...form, portrait_url: url })} hint="PNG retrato (saída 512×512)" forceSize={512} />
             </div>
           </div>
           <div>

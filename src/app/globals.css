@@ -24,3 +24,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Áreas de texto do admin: altura confortável e redimensionáveis. */
+.admin-form textarea,
+form textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.5;
+}

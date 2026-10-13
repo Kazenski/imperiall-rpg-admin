@@ -66,7 +66,7 @@ export default function ProfissoesPage() {
               <input name="sort_order" type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: Number(e.target.value) })} className="w-full border rounded px-2 py-1" />
             </div>
             <div className="col-span-2">
-              <ImageUpload label="Ícone da profissão" fieldName="icon_url" tooltipText="Ícone 128x128 PNG transparente." folder="professions" value={form.icon_url} onChange={(url) => setForm({ ...form, icon_url: url })} hint="PNG transparente 128x128" />
+              <ImageUpload label="Ícone da profissão" fieldName="icon_url" tooltipText="Ícone 128x128 PNG transparente." folder="professions" value={form.icon_url} onChange={(url) => setForm({ ...form, icon_url: url })} hint="PNG transparente (saída 256×256)" forceSize={256} />
             </div>
           </div>
           <div>

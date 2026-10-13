@@ -118,8 +118,9 @@ export default function StagesPage() {
                   folder="backgrounds"
                   value={zoneForm.bg_url}
                   onChange={(url) => setZoneForm({ ...zoneForm, bg_url: url })}
-                  hint="JPG ou PNG 1920x1080 — fundo da fase"
+                  hint="JPG ou PNG 1920x1080 — fundo da fase (limite 1920px)"
                   accept="image/png,image/jpeg,image/webp"
+                  maxSize={1920}
                 />
               </div>
             </div>

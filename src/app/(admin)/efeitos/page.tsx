@@ -92,7 +92,7 @@ export default function EfeitosPage() {
               <input name="sort_order" type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: Number(e.target.value) })} className="w-full border rounded px-2 py-1" />
             </div>
             <div className="col-span-2">
-              <ImageUpload label="Ícone do efeito" fieldName="icon_url" tooltipText="Ícone 64x64 PNG transparente." folder="effects" value={form.icon_url} onChange={(url) => setForm({ ...form, icon_url: url })} hint="PNG transparente 64x64" />
+              <ImageUpload label="Ícone do efeito" fieldName="icon_url" tooltipText="Ícone 64x64 PNG transparente." folder="effects" value={form.icon_url} onChange={(url) => setForm({ ...form, icon_url: url })} hint="PNG transparente (saída 256×256)" forceSize={256} />
             </div>
           </div>
           <div>

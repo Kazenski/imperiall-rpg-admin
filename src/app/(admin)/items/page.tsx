@@ -203,7 +203,8 @@ export default function ItemsPage() {
               folder="items"
               value={form.icon_url}
               onChange={(url) => setForm({ ...form, icon_url: url })}
-              hint="PNG transparente 128x128 — gerado na IA, fundo removido"
+              hint="PNG transparente 128x128 — gerado na IA, fundo removido (saída 512×512)"
+              forceSize={512}
             />
             <ImageUpload
               label="Sprite do item (opcional)"
@@ -212,7 +213,8 @@ export default function ItemsPage() {
               folder="items"
               value={form.sprite_url}
               onChange={(url) => setForm({ ...form, sprite_url: url })}
-              hint="PNG transparente — opcional, pode repetir o ícone"
+              hint="PNG transparente — opcional, pode repetir o ícone (saída 512×512)"
+              forceSize={512}
             />
           </div>
           <div>

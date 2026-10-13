@@ -140,11 +140,13 @@ export default function SkillsPage() {
             <ImageUpload
               label="Ícone da skill"
               fieldName="icon_url"
-              tooltipText="Ícone 64x64 ou 128x128 PNG transparente. Arraste ou clique para enviar."
+              tooltipText="Ícone 128x128. O admin recorta em círculo e salva PNG transparente automaticamente."
               folder="skills"
               value={form.icon_url}
               onChange={(url) => setForm({ ...form, icon_url: url })}
-              hint="PNG transparente 128x128 — gerado na IA"
+              hint="PNG/JPG/AVIF quadrado — vira círculo 512×512 PNG"
+              circular
+              forceSize={512}
             />
           </div>
           <div>
@@ -153,7 +155,7 @@ export default function SkillsPage() {
           </div>
           <div>
             <label className="text-sm">Efeitos (JSON) <Tooltip text='Efeitos adicionais em formato JSON. Ex.: {"stun_ms":1000} para atordoar, {"heal":50} para curar' /></label>
-            <textarea name="effects" value={form.effects} onChange={e => setForm({...form, effects: e.target.value})} className="w-full border rounded px-2 py-1 font-mono text-xs" rows={4} placeholder='{"stun_ms":1000}' />
+            <textarea name="effects" value={form.effects} onChange={e => setForm({...form, effects: e.target.value})} className="w-full border rounded px-2 py-1 font-mono text-xs" rows={6} placeholder='{"stun_ms":1000}' />
           </div>
           <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} /> Ativa</label>
           <div className="flex gap-2">
