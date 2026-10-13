@@ -15,6 +15,7 @@ export default function AdminNav() {
     { href: '/arvore', label: 'Árvore' },
     { href: '/profissoes', label: 'Profissões' },
     { href: '/receitas', label: 'Craft' },
+    { href: '/sincronizar', label: 'Sincronizar' },
     { href: '/usuarios', label: 'Usuários' },
     { href: '/guia', label: 'Guia' },
   ]
