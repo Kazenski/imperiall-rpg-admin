@@ -6,6 +6,7 @@ import { listStages } from '@/lib/actions/stages'
 import { listMobs } from '@/lib/actions/mobs'
 import { Tooltip } from '@/components/ui/tooltip'
 import { Waves, Plus, Pencil, Trash2 } from 'lucide-react'
+import { SearchBox, Counters } from '@/components/ui/data-table'
 
 const emptyWave = { stage_id: '', wave_number: 1, spawn_delay_ms: 500 }
 const emptyWaveMob = { wave_id: '', mob_id: '', quantity: 1, delay_between_ms: 250, sort_order: 0 }
@@ -22,6 +23,12 @@ export default function WavesPage() {
   const [mobForm, setMobForm] = useState(emptyWaveMob)
   const [mobWaveId, setMobWaveId] = useState('')
   const [showMobForm, setShowMobForm] = useState(false)
+  const [q, setQ] = useState('')
+
+  const waveList = q.trim()
+    ? waves.filter((w: any) => `${w.stages?.name || ''} ${w.wave_number}`.toLowerCase().includes(q.trim().toLowerCase()))
+    : waves
+  const mobEntries = Object.values(waveMobs).reduce((s: number, arr: any) => s + (arr?.length || 0), 0)
 
   const load = () => {
     listWaves().then(ws => {
@@ -108,11 +115,18 @@ export default function WavesPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <SearchBox value={q} onChange={setQ} placeholder="Pesquisar por fase..." />
+        <Counters total={waves.length} shown={waveList.length} totalLabel="ondas" />
+        <p className="text-xs text-muted-foreground">{mobEntries} inimigos vinculados</p>
+      </div>
+
       <div className="space-y-4">
-        {waves.map(wave => (
+        {waveList.map((wave, wi) => (
           <div key={wave.id} className="border rounded p-4">
             <div className="flex justify-between items-center mb-2">
               <div>
+                <span className="text-muted-foreground text-sm mr-2">{wi + 1}.</span>
                 <span className="font-semibold">Onda {wave.wave_number}</span>
                 <span className="text-sm text-muted-foreground ml-2">— {wave.stages?.name || 'Sem fase'}</span>
                 <span className="text-sm text-muted-foreground ml-2">Atraso: {wave.spawn_delay_ms}ms</span>

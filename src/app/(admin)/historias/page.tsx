@@ -12,6 +12,7 @@ import { listItems } from '@/lib/actions/items'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { Plus, Pencil, Trash2, BookOpen, MessageSquare, GitBranch } from 'lucide-react'
+import { SearchBox, Counters } from '@/components/ui/data-table'
 
 const SPEAKERS: Record<string, string> = { narrator: 'Narrador', npc: 'NPC', player: 'Jogador' }
 
@@ -40,6 +41,12 @@ export default function HistoriasPage() {
 
   const [choiceForm, setChoiceForm] = useState({ line_id: '', label: '', next_scene_id: '', reward_xp: 0, reward_item_id: '', reward_qty: 1, sort_order: 0 })
   const [showChoiceForm, setShowChoiceForm] = useState(false)
+  const [q, setQ] = useState('')
+
+  const storyList = q.trim()
+    ? stories.filter((s: any) => `${s.name} ${s.slug}`.toLowerCase().includes(q.trim().toLowerCase()))
+    : stories
+  const activeStories = stories.filter((s: any) => s.is_active).length
 
   const loadStories = () => listStories().then(setStories).catch(() => setStories([]))
   useEffect(() => { loadStories(); listNpcs().then(setNpcs).catch(() => {}); listItems().then(setItems).catch(() => {}) }, [])
@@ -97,10 +104,15 @@ export default function HistoriasPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap items-center gap-3">
+        <SearchBox value={q} onChange={setQ} placeholder="Pesquisar história..." />
+        <Counters total={stories.length} active={activeStories} shown={storyList.length} totalLabel="histórias" />
+      </div>
+
       <div className="grid grid-cols-3 gap-2">
-        {stories.map(s => (
+        {storyList.map((s, si) => (
           <button key={s.id} onClick={() => selectStory(s)} className={`border rounded p-3 text-left hover:border-primary ${activeStory?.id === s.id ? 'border-primary bg-primary/5' : ''}`}>
-            <div className="font-semibold">{s.name}</div>
+            <div className="font-semibold"><span className="text-muted-foreground font-normal mr-1">{si + 1}.</span>{s.name}</div>
             <div className="text-xs text-muted-foreground"><code>{s.slug}</code> {s.is_active ? '' : '• inativa'}</div>
           </button>
         ))}

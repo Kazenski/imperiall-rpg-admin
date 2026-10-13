@@ -7,6 +7,7 @@ import { Tooltip } from '@/components/ui/tooltip'
 import { Map, Plus, Pencil, Trash2, Eye } from 'lucide-react'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
+import { SearchBox, Counters } from '@/components/ui/data-table'
 
 function Tip({ text }: { text: string }) {
   return <Tooltip text={text} />
@@ -29,6 +30,15 @@ export default function StagesPage() {
   const [zoneEditing, setZoneEditing] = useState<any>(null)
   const [showZoneForm, setShowZoneForm] = useState(false)
   const [viewingZone, setViewingZone] = useState<any>(null)
+  const [q, setQ] = useState('')
+
+  const zoneList = q.trim()
+    ? zones.filter((z: any) => `${z.name} ${z.slug}`.toLowerCase().includes(q.trim().toLowerCase()))
+    : zones
+  const stageList = q.trim()
+    ? stages.filter((s: any) => `${s.name} ${s.slug} ${s.zones?.name || ''}`.toLowerCase().includes(q.trim().toLowerCase()))
+    : stages
+  const bossCount = stages.filter((s: any) => s.is_boss_stage).length
 
   const load = () => { listStages().then(setStages); listZones().then(setZones) }
   useEffect(() => { load() }, [])
@@ -83,6 +93,11 @@ export default function StagesPage() {
 
   return (
     <div className="space-y-8">
+      <div className="flex flex-wrap items-center gap-3">
+        <SearchBox value={q} onChange={setQ} placeholder="Pesquisar zona ou fase..." />
+        <Counters total={stages.length} shown={stageList.length} totalLabel="fases" />
+        <p className="text-xs text-muted-foreground">{zones.length} zonas • {bossCount} fases de chefão</p>
+      </div>
       {/* ZONAS */}
       <div>
         <div className="flex justify-between items-center mb-4">
@@ -141,10 +156,11 @@ export default function StagesPage() {
 
         <div className="border rounded overflow-x-auto mb-8">
           <table className="w-full text-sm">
-            <thead className="bg-muted"><tr><th className="p-2 text-left">Fundo</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Parallax</th><th className="p-2 text-left">Ativa</th><th className="p-2 text-left">Ações</th></tr></thead>
+            <thead className="bg-muted"><tr><th className="p-2 text-left">#</th><th className="p-2 text-left">Fundo</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Parallax</th><th className="p-2 text-left">Ativa</th><th className="p-2 text-left">Ações</th></tr></thead>
             <tbody>
-              {zones.map(zone => (
+              {zoneList.map((zone, zi) => (
                 <tr key={zone.id} className="border-t">
+                  <td className="p-2 text-muted-foreground">{zi + 1}</td>
                   <td className="p-2">
                     {zone.bg_url
                       ? <img src={zone.bg_url} alt={zone.name} className="w-16 h-10 object-cover rounded border" />
@@ -243,13 +259,15 @@ export default function StagesPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>
+                <th className="p-2 text-left">#</th>
                 <th className="p-2 text-left">Nome</th><th className="p-2 text-left">Zona</th><th className="p-2 text-left">Nº</th>
                 <th className="p-2 text-left">Nível</th><th className="p-2 text-left">Energia</th><th className="p-2 text-left">Boss</th><th className="p-2 text-left">Ativa</th><th className="p-2 text-left">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {stages.map(stage => (
+              {stageList.map((stage, si) => (
                 <tr key={stage.id} className="border-t">
+                  <td className="p-2 text-muted-foreground">{si + 1}</td>
                   <td className="p-2 font-medium">{stage.name}</td>
                   <td className="p-2">{stage.zones?.name || '—'}</td>
                   <td className="p-2">{stage.stage_number}</td>
@@ -270,3 +288,5 @@ export default function StagesPage() {
     </div>
   )
 }
+
+

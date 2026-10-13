@@ -6,6 +6,7 @@ import { listMobs } from '@/lib/actions/mobs'
 import { listStages } from '@/lib/actions/stages'
 import { listItems } from '@/lib/actions/items'
 import { Tooltip } from '@/components/ui/tooltip'
+import { SearchBox, Counters } from '@/components/ui/data-table'
 import { Coins, Plus, Pencil, Trash2, Gift } from 'lucide-react'
 
 const emptyTable = { slug: '', name: '', description: '', mob_id: '', stage_id: '', is_active: true }
@@ -24,6 +25,12 @@ export default function LootTablesPage() {
   const [entryForm, setEntryForm] = useState(emptyEntry)
   const [entryTableId, setEntryTableId] = useState('')
   const [showEntryForm, setShowEntryForm] = useState(false)
+  const [q, setQ] = useState('')
+
+  const tableList = q.trim()
+    ? tables.filter((t: any) => `${t.name} ${t.slug}`.toLowerCase().includes(q.trim().toLowerCase()))
+    : tables
+  const entryTotal = Object.values(entries).reduce((s: number, arr: any) => s + (arr?.length || 0), 0)
 
   const load = () => {
     listLootTables().then(ts => {
@@ -135,11 +142,18 @@ export default function LootTablesPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <SearchBox value={q} onChange={setQ} placeholder="Pesquisar tabela..." />
+        <Counters total={tables.length} shown={tableList.length} totalLabel="tabelas" />
+        <p className="text-xs text-muted-foreground">{entryTotal} drops vinculados</p>
+      </div>
+
       <div className="space-y-4">
-        {tables.map(table => (
+        {tableList.map((table, ti) => (
           <div key={table.id} className="border rounded p-4">
             <div className="flex justify-between items-center mb-2">
               <div>
+                <span className="text-muted-foreground text-sm mr-2">{ti + 1}.</span>
                 <span className="font-semibold">{table.name}</span>
                 <span className="text-sm text-muted-foreground ml-2">
                   {table.mobs?.name || table.stages?.name || 'Global'}

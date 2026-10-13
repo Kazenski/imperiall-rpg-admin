@@ -1,12 +1,13 @@
 ﻿'use client'
 
 import { useState, useEffect, useTransition } from 'react'
-import { listMobs, createMob, updateMob, deleteMob, duplicateMob } from '@/lib/actions/mobs'
+import { listMobs, createMob, updateMob, deleteMob } from '@/lib/actions/mobs'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
 import { suggestMobStats } from '@/lib/balance'
-import { Sword, Shield, Heart, Coins, Star, Plus, Pencil, Trash2, Zap, Eye, Sparkles } from 'lucide-react'
+import { Sword, Shield, Heart, Coins, Star, Plus, Pencil, Trash2, Zap, Eye, Sparkles, Copy } from 'lucide-react'
+import { useTable, SearchBox, Th, Counters } from '@/components/ui/data-table'
 
 const TIERS: Record<string, { label: string; color: string }> = {
   normal: { label: 'Normal', color: '#9ca3af' },
@@ -46,7 +47,18 @@ export default function MobsPage() {
     })
   }
 
-  const load = () => listMobs().then(setMobs)
+  const load = () => listMobs().then(setMobs).catch(() => setMobs([]))
+  const table = useTable(mobs, {
+    search: (m) => `${m.name} ${m.slug}`,
+    sort: {
+      name: (m) => m.name,
+      tier: (m) => Object.keys(TIERS).indexOf(m.tier),
+      hp: (m) => m.hp,
+      atk: (m) => m.atk,
+      exp: (m) => m.exp_reward,
+    },
+  })
+  const activeCount = mobs.filter((m) => m.is_active).length
   useEffect(() => { load() }, [])
 
   const handleEdit = (mob: any) => {
@@ -77,8 +89,10 @@ export default function MobsPage() {
     if (confirm('Excluir este inimigo?')) startTransition(() => deleteMob(id).then(load))
   }
 
-  const handleDuplicate = (id: string) => {
-    startTransition(() => duplicateMob(id).then(load).catch((e) => alert('Falha ao duplicar: ' + (e?.message || e))))
+  const handleClone = (mob: any) => {
+    handleEdit(mob)
+    setEditing(null)
+    setForm((f) => ({ ...f, slug: `${mob.slug}-copia`, name: `${mob.name} (cópia)` }))
   }
 
   return (
@@ -201,18 +215,30 @@ export default function MobsPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <SearchBox value={table.q} onChange={table.setQ} placeholder="Pesquisar inimigo..." />
+        <Counters total={mobs.length} active={activeCount} shown={table.visible.length} totalLabel="inimigos" />
+      </div>
+
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="p-2 text-left">Sprite</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tier</th><th className="p-2 text-left">HP</th>
-              <th className="p-2 text-left">ATK</th><th className="p-2 text-left">DEF</th><th className="p-2 text-left">EXP</th>
+              <th className="p-2 text-left">#</th>
+              <th className="p-2 text-left">Sprite</th>
+              <Th label="Nome" k="name" active={table.sortKey === 'name'} dir={table.sortDir} onClick={table.toggle} />
+              <Th label="Tier" k="tier" active={table.sortKey === 'tier'} dir={table.sortDir} onClick={table.toggle} />
+              <Th label="HP" k="hp" active={table.sortKey === 'hp'} dir={table.sortDir} onClick={table.toggle} />
+              <Th label="ATK" k="atk" active={table.sortKey === 'atk'} dir={table.sortDir} onClick={table.toggle} />
+              <th className="p-2 text-left">DEF</th>
+              <Th label="EXP" k="exp" active={table.sortKey === 'exp'} dir={table.sortDir} onClick={table.toggle} />
               <th className="p-2 text-left">Ouro</th><th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {mobs.map(mob => (
+            {table.visible.map((mob, i) => (
               <tr key={mob.id} className="border-t">
+                <td className="p-2 text-muted-foreground">{i + 1}</td>
                 <td className="p-2">
                   {mob.sprite_idle_url
                     ? <img src={mob.sprite_idle_url} alt={mob.name} className="w-10 h-10 object-contain rounded border bg-muted" />
@@ -228,7 +254,7 @@ export default function MobsPage() {
                 <td className="p-2 flex gap-2">
                   <button onClick={() => setViewing(mob)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(mob)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
-                  <button onClick={() => handleDuplicate(mob.id)} className="underline inline-flex items-center gap-1" title="Cria uma cópia com novo slug">Duplicar</button>
+                  <button onClick={() => handleClone(mob)} className="underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
                   <button onClick={() => handleDelete(mob.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>

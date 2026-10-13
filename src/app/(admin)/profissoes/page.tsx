@@ -4,8 +4,9 @@ import { useState, useEffect, useTransition } from 'react'
 import { listProfessions, createProfession, updateProfession, deleteProfession } from '@/lib/actions/professions'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
-import { Plus, Pencil, Trash2, Eye, Hammer } from 'lucide-react'
+import { Plus, Pencil, Trash2, Eye, Hammer, Copy } from 'lucide-react'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
+import { useTable, SearchBox, Th, Counters } from '@/components/ui/data-table'
 
 const emptyForm = { slug: '', name: '', description: '', icon_url: '', is_active: true, sort_order: 0 }
 
@@ -18,6 +19,11 @@ export default function ProfissoesPage() {
   const [isPending, startTransition] = useTransition()
 
   const load = () => listProfessions().then(setList).catch(() => setList([]))
+  const table = useTable(list, {
+    search: (p) => `${p.name} ${p.slug}`,
+    sort: { name: (p) => p.name },
+  })
+  const activeCount = list.filter((p) => p.is_active).length
   useEffect(() => { load() }, [])
 
   const handleEdit = (p: any) => {
@@ -38,6 +44,12 @@ export default function ProfissoesPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('Excluir esta profissão? Receitas que a usam perdem o vínculo.')) startTransition(() => deleteProfession(id).then(load))
+  }
+
+  const handleClone = (p: any) => {
+    handleEdit(p)
+    setEditing(null)
+    setForm((f) => ({ ...f, slug: `${p.slug}-copia`, name: `${p.name} (cópia)` }))
   }
 
   return (
@@ -81,18 +93,25 @@ export default function ProfissoesPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <SearchBox value={table.q} onChange={table.setQ} placeholder="Pesquisar profissão..." />
+        <Counters total={list.length} active={activeCount} shown={table.visible.length} totalLabel="profissões" />
+      </div>
+
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted"><tr><th className="p-2 text-left">Ícone</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Ativa</th><th className="p-2 text-left">Ações</th></tr></thead>
+          <thead className="bg-muted"><tr><th className="p-2 text-left">#</th><th className="p-2 text-left">Ícone</th><Th label="Nome" k="name" active={table.sortKey === 'name'} dir={table.sortDir} onClick={table.toggle} /><th className="p-2 text-left">Ativa</th><th className="p-2 text-left">Ações</th></tr></thead>
           <tbody>
-            {list.map(p => (
+            {table.visible.map((p, i) => (
               <tr key={p.id} className="border-t">
+                <td className="p-2 text-muted-foreground">{i + 1}</td>
                 <td className="p-2">{p.icon_url ? <img src={p.icon_url} alt={p.name} className="w-10 h-10 object-contain rounded border bg-muted" /> : <span className="text-muted-foreground text-xs">—</span>}</td>
                 <td className="p-2 font-medium"><button onClick={() => setViewing(p)} className="underline underline-offset-2 hover:text-primary">{p.name}</button></td>
                 <td className="p-2">{p.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
                   <button onClick={() => setViewing(p)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(p)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleClone(p)} className="underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
                   <button onClick={() => handleDelete(p.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>

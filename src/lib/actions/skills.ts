@@ -11,9 +11,6 @@ export async function listSkills() {
 
 export async function createSkill(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const effects: Record<string, any> = {}
-  if (data.effects) { try { effects.config = JSON.parse(data.effects as string) } catch {} }
-  delete (data as any).effects
 
   const payload = {
     slug: data.slug,
@@ -26,7 +23,7 @@ export async function createSkill(formData: FormData) {
     base_damage: Number(data.base_damage) || 0,
     icon_url: data.icon_url || null,
     animation_key: data.animation_key || null,
-    effects: effects.config || {},
+    // Efeitos vivem em skill_effects (catálogo), não mais em JSON.
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
@@ -37,9 +34,6 @@ export async function createSkill(formData: FormData) {
 
 export async function updateSkill(id: string, formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const effects: Record<string, any> = {}
-  if (data.effects) { try { effects.config = JSON.parse(data.effects as string) } catch {} }
-  delete (data as any).effects
 
   const payload = {
     slug: data.slug,
@@ -52,7 +46,6 @@ export async function updateSkill(id: string, formData: FormData) {
     base_damage: Number(data.base_damage) || 0,
     icon_url: data.icon_url || null,
     animation_key: data.animation_key || null,
-    effects: effects.config || {},
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }

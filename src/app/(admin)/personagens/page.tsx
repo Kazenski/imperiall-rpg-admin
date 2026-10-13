@@ -10,8 +10,9 @@ import { listSkills } from '@/lib/actions/skills'
 import { listEffects } from '@/lib/actions/effects'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
-import { Plus, Pencil, Trash2, Eye, Swords } from 'lucide-react'
+import { Plus, Pencil, Trash2, Eye, Swords, Copy } from 'lucide-react'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
+import { useTable, SearchBox, Th, Counters } from '@/components/ui/data-table'
 
 const emptyForm = { slug: '', name: '', description: '', portrait_url: '', sprite_idle_url: '', sprite_attack_url: '', hp: 100, atk: 10, def: 5, speed: 100, is_active: true, sort_order: 0 }
 
@@ -34,6 +35,11 @@ export default function PersonagensPage() {
     listSkills().then(setSkills).catch(() => {})
     listEffects().then(setEffects).catch(() => {})
   }
+  const table = useTable(chars, {
+    search: (c) => `${c.name} ${c.slug}`,
+    sort: { name: (c) => c.name, hp: (c) => c.hp, atk: (c) => c.atk },
+  })
+  const activeCount = chars.filter((c) => c.is_active).length
   useEffect(() => { load() }, [])
 
   const openDetail = (c: any) => {
@@ -60,6 +66,12 @@ export default function PersonagensPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('Excluir este personagem? Vínculos de skills/traits/árvore serão removidos.')) startTransition(() => deleteCharacter(id).then(load))
+  }
+
+  const handleClone = (c: any) => {
+    handleEdit(c)
+    setEditing(null)
+    setForm((f) => ({ ...f, slug: `${c.slug}-copia`, name: `${c.name} (cópia)` }))
   }
 
   const run = (fn: () => Promise<any>) => startTransition(() => fn().then(() => { load(); if (viewing) openDetail({ ...viewing }) }).catch((e) => alert('Falha: ' + (e?.message || e))))
@@ -97,12 +109,18 @@ export default function PersonagensPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <SearchBox value={table.q} onChange={table.setQ} placeholder="Pesquisar herói..." />
+        <Counters total={chars.length} active={activeCount} shown={table.visible.length} totalLabel="heróis" />
+      </div>
+
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted"><tr><th className="p-2 text-left">Retrato</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">HP/ATK/DEF</th><th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th></tr></thead>
+          <thead className="bg-muted"><tr><th className="p-2 text-left">#</th><th className="p-2 text-left">Retrato</th><Th label="Nome" k="name" active={table.sortKey === 'name'} dir={table.sortDir} onClick={table.toggle} /><th className="p-2 text-left">HP/ATK/DEF</th><th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th></tr></thead>
           <tbody>
-            {chars.map(c => (
+            {table.visible.map((c, i) => (
               <tr key={c.id} className="border-t">
+                <td className="p-2 text-muted-foreground">{i + 1}</td>
                 <td className="p-2">{c.portrait_url ? <img src={c.portrait_url} alt={c.name} className="w-10 h-10 object-cover rounded-full border" /> : <span className="text-muted-foreground text-xs">—</span>}</td>
                 <td className="p-2 font-medium"><button onClick={() => openDetail(c)} className="underline underline-offset-2 hover:text-primary">{c.name}</button></td>
                 <td className="p-2">{c.hp}/{c.atk}/{c.def}</td>
@@ -110,6 +128,7 @@ export default function PersonagensPage() {
                 <td className="p-2 flex gap-2">
                   <button onClick={() => openDetail(c)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(c)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleClone(c)} className="underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
                   <button onClick={() => handleDelete(c.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>

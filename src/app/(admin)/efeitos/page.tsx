@@ -4,8 +4,9 @@ import { useState, useEffect, useTransition } from 'react'
 import { listEffects, createEffect, updateEffect, deleteEffect } from '@/lib/actions/effects'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
-import { Plus, Pencil, Trash2, Eye, Sparkles } from 'lucide-react'
+import { Plus, Pencil, Trash2, Eye, Sparkles, Copy } from 'lucide-react'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
+import { useTable, SearchBox, Th, Counters } from '@/components/ui/data-table'
 
 const CATEGORIES: Record<string, string> = { buff: 'Buff (melhora)', debuff: 'Debuff (piora)', heal: 'Cura', damage: 'Dano', utility: 'Utilidade', control: 'Controle (stun/slow)' }
 const TARGETS: Record<string, string> = { self: 'Próprio', enemy: 'Um inimigo', enemies: 'Inimigos', ally: 'Um aliado', allies: 'Aliados', aoe: 'Área' }
@@ -22,6 +23,16 @@ export default function EfeitosPage() {
   const [isPending, startTransition] = useTransition()
 
   const load = () => listEffects().then(setEffects).catch(() => setEffects([]))
+  const table = useTable(effects, {
+    search: (e) => `${e.name} ${e.slug}`,
+    sort: {
+      name: (e) => e.name,
+      category: (e) => CATEGORIES[e.category] || e.category,
+      target: (e) => TARGETS[e.target] || e.target,
+      value: (e) => Number(e.default_value) || 0,
+    },
+  })
+  const activeCount = effects.filter((e) => e.is_active).length
   useEffect(() => { load() }, [])
 
   const handleEdit = (e: any) => {
@@ -42,6 +53,12 @@ export default function EfeitosPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('Excluir este efeito? Skills/itens que o usam vão falhar.')) startTransition(() => deleteEffect(id).then(load).catch((e) => alert('Falha: ' + (e?.message || e))))
+  }
+
+  const handleClone = (e: any) => {
+    handleEdit(e)
+    setEditing(null)
+    setForm((f) => ({ ...f, slug: `${e.slug}-copia`, name: `${e.name} (cópia)` }))
   }
 
   return (
@@ -107,14 +124,27 @@ export default function EfeitosPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <SearchBox value={table.q} onChange={table.setQ} placeholder="Pesquisar efeito..." />
+        <Counters total={effects.length} active={activeCount} shown={table.visible.length} totalLabel="efeitos" />
+      </div>
+
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted">
-            <tr><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Categoria</th><th className="p-2 text-left">Alvo</th><th className="p-2 text-left">Valor padrão</th><th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th></tr>
+            <tr>
+              <th className="p-2 text-left">#</th>
+              <Th label="Nome" k="name" active={table.sortKey === 'name'} dir={table.sortDir} onClick={table.toggle} />
+              <Th label="Categoria" k="category" active={table.sortKey === 'category'} dir={table.sortDir} onClick={table.toggle} />
+              <Th label="Alvo" k="target" active={table.sortKey === 'target'} dir={table.sortDir} onClick={table.toggle} />
+              <Th label="Valor padrão" k="value" active={table.sortKey === 'value'} dir={table.sortDir} onClick={table.toggle} />
+              <th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th>
+            </tr>
           </thead>
           <tbody>
-            {effects.map(e => (
+            {table.visible.map((e, i) => (
               <tr key={e.id} className="border-t">
+                <td className="p-2 text-muted-foreground">{i + 1}</td>
                 <td className="p-2 font-medium"><button onClick={() => setViewing(e)} className="underline underline-offset-2 hover:text-primary">{e.name}</button><div className="text-xs text-muted-foreground"><code>{e.slug}</code></div></td>
                 <td className="p-2">{CATEGORIES[e.category] || e.category}</td>
                 <td className="p-2">{TARGETS[e.target] || e.target}</td>
@@ -123,6 +153,7 @@ export default function EfeitosPage() {
                 <td className="p-2 flex gap-2">
                   <button onClick={() => setViewing(e)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(e)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleClone(e)} className="underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
                   <button onClick={() => handleDelete(e.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>

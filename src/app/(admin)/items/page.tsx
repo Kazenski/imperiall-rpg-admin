@@ -1,14 +1,15 @@
 ﻿'use client'
 
 import { useState, useEffect } from 'react'
-import { listItems, createItem, updateItem, deleteItem, duplicateItem } from '@/lib/actions/items'
+import { listItems, createItem, updateItem, deleteItem } from '@/lib/actions/items'
 import { useTransition } from 'react'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
 import { suggestItemStats } from '@/lib/balance'
 import { listEffects, listItemEffects, addItemEffect, deleteItemEffect } from '@/lib/actions/effects'
-import { Sword, Shield, Heart, Coins, Gem, Plus, Pencil, Trash2, Eye, Sparkles } from 'lucide-react'
+import { Sword, Shield, Heart, Coins, Gem, Plus, Pencil, Trash2, Eye, Sparkles, Copy } from 'lucide-react'
+import { useTable, SearchBox, Th, Counters } from '@/components/ui/data-table'
 
 const ITEM_TYPES: Record<string, string> = {
   weapon: 'Arma', helmet: 'Capacete', chest: 'Peitoral', gloves: 'Luvas',
@@ -47,7 +48,7 @@ export default function ItemsPage() {
   const [effPick, setEffPick] = useState({ effect_id: '', value: 0 })
 
   const openDetail = (item: any) => {
-    openDetail(item)
+    setViewing(item)
     listEffects().then(setAllEffects).catch(() => {})
     listItemEffects(item.id).then(setUsedEffects).catch(() => setUsedEffects([]))
   }
@@ -64,7 +65,18 @@ export default function ItemsPage() {
     })
   }
 
-  const load = () => listItems().then(setItems)
+  const load = () => listItems().then(setItems).catch(() => setItems([]))
+  const table = useTable(items, {
+    search: (i) => `${i.name} ${i.slug}`,
+    sort: {
+      name: (i) => i.name,
+      type: (i) => ITEM_TYPES[i.type] || i.type,
+      rarity: (i) => Object.keys(RARITIES).indexOf(i.rarity),
+      atk: (i) => i.stats?.atk || 0,
+      price: (i) => i.price_gold || 0,
+    },
+  })
+  const activeCount = items.filter((i) => i.is_active).length
   useEffect(() => { load() }, [])
 
   const handleEdit = (item: any) => {
@@ -95,8 +107,10 @@ export default function ItemsPage() {
     if (confirm('Excluir este item?')) startTransition(() => deleteItem(id).then(load))
   }
 
-  const handleDuplicate = (id: string) => {
-    startTransition(() => duplicateItem(id).then(load).catch((e) => alert('Falha ao duplicar: ' + (e?.message || e))))
+  const handleClone = (item: any) => {
+    handleEdit(item)
+    setEditing(null)
+    setForm((f) => ({ ...f, slug: `${item.slug}-copia`, name: `${item.name} (cópia)` }))
   }
 
   return (
@@ -232,18 +246,30 @@ export default function ItemsPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <SearchBox value={table.q} onChange={table.setQ} placeholder="Pesquisar item..." />
+        <Counters total={items.length} active={activeCount} shown={table.visible.length} totalLabel="itens" />
+      </div>
+
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="p-2 text-left">Ícone</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tipo</th><th className="p-2 text-left">Raridade</th>
-              <th className="p-2 text-left">ATK</th><th className="p-2 text-left">DEF</th><th className="p-2 text-left">HP</th>
-              <th className="p-2 text-left">Preço</th><th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th>
+              <th className="p-2 text-left">#</th>
+              <th className="p-2 text-left">Ícone</th>
+              <Th label="Nome" k="name" active={table.sortKey === 'name'} dir={table.sortDir} onClick={table.toggle} />
+              <Th label="Tipo" k="type" active={table.sortKey === 'type'} dir={table.sortDir} onClick={table.toggle} />
+              <Th label="Raridade" k="rarity" active={table.sortKey === 'rarity'} dir={table.sortDir} onClick={table.toggle} />
+              <Th label="ATK" k="atk" active={table.sortKey === 'atk'} dir={table.sortDir} onClick={table.toggle} />
+              <th className="p-2 text-left">DEF</th><th className="p-2 text-left">HP</th>
+              <Th label="Preço" k="price" active={table.sortKey === 'price'} dir={table.sortDir} onClick={table.toggle} />
+              <th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {items.map(item => (
+            {table.visible.map((item, i) => (
               <tr key={item.id} className="border-t">
+                <td className="p-2 text-muted-foreground">{i + 1}</td>
                 <td className="p-2">
                   {item.icon_url
                     ? <img src={item.icon_url} alt={item.name} className="w-10 h-10 object-contain rounded border bg-muted" />
@@ -260,7 +286,7 @@ export default function ItemsPage() {
                 <td className="p-2 flex gap-2">
                   <button onClick={() => openDetail(item)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(item)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
-                  <button onClick={() => handleDuplicate(item.id)} className="underline inline-flex items-center gap-1" title="Cria uma cópia com novo slug">Duplicar</button>
+                  <button onClick={() => handleClone(item)} className="underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
                   <button onClick={() => handleDelete(item.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>

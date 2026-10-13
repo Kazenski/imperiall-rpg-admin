@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useMemo } from 'react'
 import { listUsers, setUserRole, listPunishments, punishUser, revokePunishment } from '@/lib/actions/users'
 import { Tooltip } from '@/components/ui/tooltip'
 import { DetailModal, DetailRow } from '@/components/ui/detail-modal'
 import { Search, ShieldAlert, VolumeX, Ban, Undo2, Crown, Eye } from 'lucide-react'
+import { Th, Counters } from '@/components/ui/data-table'
 
 const DURATIONS = [
   { label: '10 minutos', minutes: 10 },
@@ -28,6 +29,30 @@ export default function UsuariosPage() {
   const [reason, setReason] = useState('')
   const [minutes, setMinutes] = useState(60)
   const [isPending, startTransition] = useTransition()
+  const [sortKey, setSortKey] = useState('name')
+  const [sortDir, setSortDir] = useState<1 | -1>(1)
+
+  const toggleSort = (k: string) => {
+    if (k === sortKey) setSortDir(sortDir === 1 ? -1 : 1)
+    else { setSortKey(k); setSortDir(1) }
+  }
+
+  const visible = useMemo(() => {
+    const out = [...users]
+    out.sort((a, b) => {
+      const va = sortKey === 'level' ? a.level : (a.display_name || a.username || '')
+      const vb = sortKey === 'level' ? b.level : (b.display_name || b.username || '')
+      const c = typeof va === 'number' && typeof vb === 'number'
+        ? va - vb
+        : String(va).localeCompare(String(vb), 'pt-BR')
+      return c * sortDir
+    })
+    return out
+  }, [users, sortKey, sortDir])
+
+  const admins = users.filter((u) => u.role === 'admin').length
+  const muted = users.filter((u) => isActive(u.muted_until)).length
+  const banned = users.filter((u) => isActive(u.banned_until)).length
 
   const load = (s = search) => listUsers(s).then(setUsers).catch(() => setUsers([]))
   useEffect(() => { load('') }, [])
@@ -78,28 +103,36 @@ export default function UsuariosPage() {
         <p className="text-sm text-muted-foreground">Veja jogadores, promova a admin, silencie (mute) ou bana. O jogo bloqueia o acesso pelo <code>banned_until</code> e o chat pelo <code>muted_until</code>.</p>
       </div>
 
-      <form onSubmit={handleSearch} className="flex gap-2 mb-4">
+      <form onSubmit={handleSearch} className="flex gap-2 mb-3">
         <div className="relative flex-1 max-w-sm">
           <Search size={16} className="absolute left-2 top-2.5 text-muted-foreground" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome..." className="w-full border rounded pl-8 pr-2 py-1.5" />
         </div>
         <button type="submit" className="px-4 py-1.5 border rounded">Buscar</button>
       </form>
+      <div className="mb-3">
+        <Counters total={users.length} shown={visible.length} totalLabel="usuários" />
+        <p className="text-xs text-muted-foreground">{admins} admins • {muted} silenciados • {banned} banidos (nesta lista)</p>
+      </div>
 
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="p-2 text-left">Jogador</th><th className="p-2 text-left">Nível</th><th className="p-2 text-left">Função</th>
+              <th className="p-2 text-left">#</th>
+              <Th label="Jogador" k="name" active={sortKey === 'name'} dir={sortDir} onClick={toggleSort} />
+              <Th label="Nível" k="level" active={sortKey === 'level'} dir={sortDir} onClick={toggleSort} />
+              <th className="p-2 text-left">Função</th>
               <th className="p-2 text-left">Status</th><th className="p-2 text-left">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {users.map(u => {
+            {visible.map((u, i) => {
               const muted = isActive(u.muted_until)
               const banned = isActive(u.banned_until)
               return (
                 <tr key={u.id} className="border-t">
+                  <td className="p-2 text-muted-foreground">{i + 1}</td>
                   <td className="p-2">
                     <button onClick={() => openDetail(u)} className="underline underline-offset-2 hover:text-primary text-left font-medium">
                       {u.display_name || u.username}

@@ -3,7 +3,8 @@
 import { useState, useEffect, useTransition } from 'react'
 import { listSkills, createSkill, updateSkill, deleteSkill } from '@/lib/actions/skills'
 import { Tooltip } from '@/components/ui/tooltip'
-import { Zap, Plus, Pencil, Trash2, Eye, Sparkles } from 'lucide-react'
+import { Zap, Plus, Pencil, Trash2, Eye, Sparkles, Copy } from 'lucide-react'
+import { useTable, SearchBox, Th, Counters } from '@/components/ui/data-table'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
 import { suggestSkillStats } from '@/lib/balance'
@@ -18,7 +19,7 @@ const TARGETS: Record<string, string> = {
 const emptyForm = {
   slug: '', name: '', description: '', type: 'active', target: 'enemy',
   cooldown_ms: 0, mana_cost: 0, base_damage: 0, icon_url: '', animation_key: '',
-  effects: '', is_active: true, sort_order: 0,
+  is_active: true, sort_order: 0,
 }
 
 export default function SkillsPage() {
@@ -44,7 +45,17 @@ export default function SkillsPage() {
     setForm({ ...form, cooldown_ms: s.cooldown_ms, mana_cost: s.mana_cost, base_damage: s.base_damage })
   }
 
-  const load = () => listSkills().then(setSkills)
+  const load = () => listSkills().then(setSkills).catch(() => setSkills([]))
+  const table = useTable(skills, {
+    search: (s) => `${s.name} ${s.slug}`,
+    sort: {
+      name: (s) => s.name,
+      type: (s) => SKILL_TYPES[s.type] || s.type,
+      cooldown: (s) => s.cooldown_ms,
+      damage: (s) => s.base_damage,
+    },
+  })
+  const activeCount = skills.filter((s) => s.is_active).length
   useEffect(() => { load() }, [])
 
   const handleEdit = (skill: any) => {
@@ -53,9 +64,15 @@ export default function SkillsPage() {
       slug: skill.slug, name: skill.name, description: skill.description || '', type: skill.type,
       target: skill.target, cooldown_ms: skill.cooldown_ms, mana_cost: skill.mana_cost,
       base_damage: skill.base_damage, icon_url: skill.icon_url || '', animation_key: skill.animation_key || '',
-      effects: JSON.stringify(skill.effects || {}, null, 2), is_active: skill.is_active, sort_order: skill.sort_order,
+      is_active: skill.is_active, sort_order: skill.sort_order,
     })
     setShowForm(true)
+  }
+
+  const handleClone = (skill: any) => {
+    handleEdit(skill)
+    setEditing(null)
+    setForm((f) => ({ ...f, slug: `${skill.slug}-copia`, name: `${skill.name} (cópia)` }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -153,9 +170,8 @@ export default function SkillsPage() {
             <label className="text-sm">Descrição <Tooltip text="Texto exibido ao jogador. Ex.: 'Causa 150 de dano e atordoa o inimigo por 1s'" /></label>
             <textarea name="description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded px-2 py-1" />
           </div>
-          <div>
-            <label className="text-sm">Efeitos (JSON) <Tooltip text='Efeitos adicionais em formato JSON. Ex.: {"stun_ms":1000} para atordoar, {"heal":50} para curar' /></label>
-            <textarea name="effects" value={form.effects} onChange={e => setForm({...form, effects: e.target.value})} className="w-full border rounded px-2 py-1 font-mono text-xs" rows={6} placeholder='{"stun_ms":1000}' />
+          <div className="rounded bg-muted/60 p-2 text-xs text-muted-foreground">
+            Efeitos vinculados no botão <strong>Ver</strong> da lista (catálogo de efeitos, sem JSON).
           </div>
           <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} /> Ativa</label>
           <div className="flex gap-2">
@@ -165,18 +181,30 @@ export default function SkillsPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <SearchBox value={table.q} onChange={table.setQ} placeholder="Pesquisar skill..." />
+        <Counters total={skills.length} active={activeCount} shown={table.visible.length} totalLabel="skills" />
+      </div>
+
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="p-2 text-left">Ícone</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tipo</th><th className="p-2 text-left">Alvo</th>
-              <th className="p-2 text-left">Recarga</th><th className="p-2 text-left">Mana</th><th className="p-2 text-left">Dano</th>
+              <th className="p-2 text-left">#</th>
+              <th className="p-2 text-left">Ícone</th>
+              <Th label="Nome" k="name" active={table.sortKey === 'name'} dir={table.sortDir} onClick={table.toggle} />
+              <Th label="Tipo" k="type" active={table.sortKey === 'type'} dir={table.sortDir} onClick={table.toggle} />
+              <th className="p-2 text-left">Alvo</th>
+              <Th label="Recarga" k="cooldown" active={table.sortKey === 'cooldown'} dir={table.sortDir} onClick={table.toggle} />
+              <th className="p-2 text-left">Mana</th>
+              <Th label="Dano" k="damage" active={table.sortKey === 'damage'} dir={table.sortDir} onClick={table.toggle} />
               <th className="p-2 text-left">Ativa</th><th className="p-2 text-left">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {skills.map(skill => (
+            {table.visible.map((skill, i) => (
               <tr key={skill.id} className="border-t">
+                <td className="p-2 text-muted-foreground">{i + 1}</td>
                 <td className="p-2">
                   {skill.icon_url
                     ? <img src={skill.icon_url} alt={skill.name} className="w-10 h-10 object-contain rounded border bg-muted" />
@@ -192,6 +220,7 @@ export default function SkillsPage() {
                 <td className="p-2 flex gap-2">
                   <button onClick={() => openDetail(skill)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(skill)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleClone(skill)} className="underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
                   <button onClick={() => handleDelete(skill.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>

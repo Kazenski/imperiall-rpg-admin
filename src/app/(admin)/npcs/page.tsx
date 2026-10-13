@@ -4,8 +4,9 @@ import { useState, useEffect, useTransition } from 'react'
 import { listNpcs, createNpc, updateNpc, deleteNpc } from '@/lib/actions/npcs'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
-import { Plus, Pencil, Trash2, Eye, Users } from 'lucide-react'
+import { Plus, Pencil, Trash2, Eye, Users, Copy } from 'lucide-react'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
+import { useTable, SearchBox, Th, Counters } from '@/components/ui/data-table'
 
 const emptyForm = { slug: '', name: '', description: '', portrait_url: '', is_active: true, sort_order: 0 }
 
@@ -18,6 +19,11 @@ export default function NpcsPage() {
   const [isPending, startTransition] = useTransition()
 
   const load = () => listNpcs().then(setNpcs).catch(() => setNpcs([]))
+  const table = useTable(npcs, {
+    search: (n) => `${n.name} ${n.slug}`,
+    sort: { name: (n) => n.name },
+  })
+  const activeCount = npcs.filter((n) => n.is_active).length
   useEffect(() => { load() }, [])
 
   const handleEdit = (n: any) => {
@@ -38,6 +44,12 @@ export default function NpcsPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('Excluir este NPC? Falas que o usam perdem o vínculo.')) startTransition(() => deleteNpc(id).then(load))
+  }
+
+  const handleClone = (n: any) => {
+    handleEdit(n)
+    setEditing(null)
+    setForm((f) => ({ ...f, slug: `${n.slug}-copia`, name: `${n.name} (cópia)` }))
   }
 
   return (
@@ -81,18 +93,25 @@ export default function NpcsPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <SearchBox value={table.q} onChange={table.setQ} placeholder="Pesquisar NPC..." />
+        <Counters total={npcs.length} active={activeCount} shown={table.visible.length} totalLabel="NPCs" />
+      </div>
+
       <div className="border rounded overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-muted"><tr><th className="p-2 text-left">Retrato</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th></tr></thead>
+          <thead className="bg-muted"><tr><th className="p-2 text-left">#</th><th className="p-2 text-left">Retrato</th><Th label="Nome" k="name" active={table.sortKey === 'name'} dir={table.sortDir} onClick={table.toggle} /><th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th></tr></thead>
           <tbody>
-            {npcs.map(n => (
+            {table.visible.map((n, i) => (
               <tr key={n.id} className="border-t">
+                <td className="p-2 text-muted-foreground">{i + 1}</td>
                 <td className="p-2">{n.portrait_url ? <img src={n.portrait_url} alt={n.name} className="w-10 h-10 object-cover rounded-full border" /> : <span className="text-muted-foreground text-xs">—</span>}</td>
                 <td className="p-2 font-medium"><button onClick={() => setViewing(n)} className="underline underline-offset-2 hover:text-primary">{n.name}</button></td>
                 <td className="p-2">{n.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
                   <button onClick={() => setViewing(n)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(n)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleClone(n)} className="underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
                   <button onClick={() => handleDelete(n.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>
