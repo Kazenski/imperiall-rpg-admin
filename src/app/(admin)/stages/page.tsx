@@ -3,9 +3,11 @@
 import { useState, useEffect, useTransition } from 'react'
 import { listStages, createStage, updateStage, deleteStage } from '@/lib/actions/stages'
 import { listZones, createZone, updateZone, deleteZone } from '@/lib/actions/zones'
+import { Tooltip } from '@/components/ui/tooltip'
+import { Map, Plus, Pencil, Trash2, Crown } from 'lucide-react'
 
 function Tip({ text }: { text: string }) {
-  return <span className="ml-1 cursor-help text-muted-foreground" title={text}>?</span>
+  return <Tooltip text={text} />
 }
 
 const emptyStage = {
@@ -82,10 +84,12 @@ export default function StagesPage() {
       <div>
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-2xl font-semibold">Zonas</h2>
+            <h2 className="text-2xl font-semibold flex items-center gap-2"><Map size={20} /> Zonas</h2>
             <p className="text-sm text-muted-foreground">Regiões do mapa onde as fases acontecem</p>
           </div>
-          <button onClick={() => { setZoneEditing(null); setZoneForm(emptyZone); setShowZoneForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded">+ Nova Zona</button>
+          <button onClick={() => { setZoneEditing(null); setZoneForm(emptyZone); setShowZoneForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2">
+            <Plus size={16} /> Nova Zona
+          </button>
         </div>
 
         {showZoneForm && (
@@ -134,8 +138,8 @@ export default function StagesPage() {
                   <td className="p-2">{zone.bg_parallax ? 'Sim' : 'Não'}</td>
                   <td className="p-2">{zone.is_active ? 'Sim' : 'Não'}</td>
                   <td className="p-2 flex gap-2">
-                    <button onClick={() => handleZoneEdit(zone)} className="text-blue-600 underline">Editar</button>
-                    <button onClick={() => handleZoneDelete(zone.id)} className="text-red-600 underline">Excluir</button>
+                    <button onClick={() => handleZoneEdit(zone)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                    <button onClick={() => handleZoneDelete(zone.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                   </td>
                 </tr>
               ))}
@@ -151,7 +155,9 @@ export default function StagesPage() {
             <h2 className="text-2xl font-semibold">Fases (Stages)</h2>
             <p className="text-sm text-muted-foreground">Fases dentro de cada zona. Cada fase tem ondas de inimigos</p>
           </div>
-          <button onClick={() => { setEditing(null); setForm(emptyStage); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded">+ Nova Fase</button>
+          <button onClick={() => { setEditing(null); setForm(emptyStage); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2">
+            <Plus size={16} /> Nova Fase
+          </button>
         </div>
 
         {showForm && (
@@ -223,8 +229,8 @@ export default function StagesPage() {
                   <td className="p-2">{stage.is_boss_stage ? 'Sim' : 'Não'}</td>
                   <td className="p-2">{stage.is_active ? 'Sim' : 'Não'}</td>
                   <td className="p-2 flex gap-2">
-                    <button onClick={() => handleEdit(stage)} className="text-blue-600 underline">Editar</button>
-                    <button onClick={() => handleDelete(stage.id)} className="text-red-600 underline">Excluir</button>
+                    <button onClick={() => handleEdit(stage)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                    <button onClick={() => handleDelete(stage.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                   </td>
                 </tr>
               ))}

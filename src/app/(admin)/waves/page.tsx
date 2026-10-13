@@ -4,10 +4,8 @@ import { useState, useEffect, useTransition } from 'react'
 import { listWaves, listWaveMobs, createWave, updateWave, deleteWave, addWaveMob, deleteWaveMob } from '@/lib/actions/waves'
 import { listStages } from '@/lib/actions/stages'
 import { listMobs } from '@/lib/actions/mobs'
-
-function Tip({ text }: { text: string }) {
-  return <span className="ml-1 cursor-help text-muted-foreground" title={text}>?</span>
-}
+import { Tooltip } from '@/components/ui/tooltip'
+import { Waves, Plus, Pencil, Trash2 } from 'lucide-react'
 
 const emptyWave = { stage_id: '', wave_number: 1, spawn_delay_ms: 500 }
 const emptyWaveMob = { wave_id: '', mob_id: '', quantity: 1, delay_between_ms: 250, sort_order: 0 }
@@ -76,28 +74,30 @@ export default function WavesPage() {
     <div>
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h2 className="text-2xl font-semibold">Ondas (Waves)</h2>
+          <h2 className="text-2xl font-semibold flex items-center gap-2"><Waves size={20} /> Ondas (Waves)</h2>
           <p className="text-sm text-muted-foreground">Configure os grupos de inimigos que aparecem em cada fase</p>
         </div>
-        <button onClick={() => { setEditing(null); setForm(emptyWave); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded">+ Nova Onda</button>
+        <button onClick={() => { setEditing(null); setForm(emptyWave); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2">
+          <Plus size={16} /> Nova Onda
+        </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="border rounded p-4 mb-4 space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-sm">Fase (Stage) <Tip text="Fase onde esta onda vai aparecer" /></label>
+              <label className="text-sm">Fase (Stage) <Tooltip text="Fase onde esta onda vai aparecer" /></label>
               <select name="stage_id" value={form.stage_id} onChange={e => setForm({...form, stage_id: e.target.value})} className="w-full border rounded px-2 py-1" required>
                 <option value="">—</option>
                 {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm">Número da Onda <Tip text="Ordem dentro da fase (1, 2, 3...). A onda 1 aparece primeiro" /></label>
+              <label className="text-sm">Número da Onda <Tooltip text="Ordem dentro da fase (1, 2, 3...). A onda 1 aparece primeiro" /></label>
               <input name="wave_number" type="number" value={form.wave_number} onChange={e => setForm({...form, wave_number: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Atraso de Spawn (ms) <Tip text="Tempo antes de iniciar a onda (milissegundos). Ex.: 1000 = 1 segundo de preparação" /></label>
+              <label className="text-sm">Atraso de Spawn (ms) <Tooltip text="Tempo antes de iniciar a onda (milissegundos). Ex.: 1000 = 1 segundo de preparação" /></label>
               <input name="spawn_delay_ms" type="number" value={form.spawn_delay_ms} onChange={e => setForm({...form, spawn_delay_ms: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
           </div>
@@ -118,9 +118,9 @@ export default function WavesPage() {
                 <span className="text-sm text-muted-foreground ml-2">Atraso: {wave.spawn_delay_ms}ms</span>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => handleAddMob(wave.id)} className="text-sm text-blue-600 underline">+ Inimigo</button>
-                <button onClick={() => handleEdit(wave)} className="text-sm text-blue-600 underline">Editar</button>
-                <button onClick={() => handleDelete(wave.id)} className="text-sm text-red-600 underline">Excluir</button>
+                <button onClick={() => handleAddMob(wave.id)} className="text-sm text-blue-600 underline inline-flex items-center gap-1"><Plus size={12} /> Inimigo</button>
+                <button onClick={() => handleEdit(wave)} className="text-sm text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                <button onClick={() => handleDelete(wave.id)} className="text-sm text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
               </div>
             </div>
             <div className="text-sm space-y-1">
@@ -145,22 +145,22 @@ export default function WavesPage() {
           <input type="hidden" name="wave_id" value={mobWaveId} />
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-sm">Inimigo <Tip text="Inimigo que vai aparecer nesta onda" /></label>
+              <label className="text-sm">Inimigo <Tooltip text="Inimigo que vai aparecer nesta onda" /></label>
               <select name="mob_id" value={mobForm.mob_id} onChange={e => setMobForm({...mobForm, mob_id: e.target.value})} className="w-full border rounded px-2 py-1" required>
                 <option value="">—</option>
                 {mobs.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm">Quantidade <Tip text="Quantos deste inimigo spawnam nesta onda" /></label>
+              <label className="text-sm">Quantidade <Tooltip text="Quantos deste inimigo spawnam nesta onda" /></label>
               <input name="quantity" type="number" value={mobForm.quantity} onChange={e => setMobForm({...mobForm, quantity: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Intervalo (ms) <Tip text="Tempo entre cada spawn individual (milissegundos). Ex.: 300 = 0.3s entre cada inimigo" /></label>
+              <label className="text-sm">Intervalo (ms) <Tooltip text="Tempo entre cada spawn individual (milissegundos). Ex.: 300 = 0.3s entre cada inimigo" /></label>
               <input name="delay_between_ms" type="number" value={mobForm.delay_between_ms} onChange={e => setMobForm({...mobForm, delay_between_ms: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Ordem <Tip text="Ordem de spawn (0 = primeiro)" /></label>
+              <label className="text-sm">Ordem <Tooltip text="Ordem de spawn (0 = primeiro)" /></label>
               <input name="sort_order" type="number" value={mobForm.sort_order} onChange={e => setMobForm({...mobForm, sort_order: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
           </div>

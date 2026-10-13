@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { listItems, createItem, updateItem, deleteItem } from '@/lib/actions/items'
 import { useTransition } from 'react'
+import { Tooltip } from '@/components/ui/tooltip'
+import { Sword, Shield, Heart, Coins, Gem, Plus, Pencil, Trash2 } from 'lucide-react'
 
 const ITEM_TYPES: Record<string, string> = {
   weapon: 'Arma', helmet: 'Capacete', chest: 'Peitoral', gloves: 'Luvas',
@@ -20,12 +22,6 @@ const RARITIES: Record<string, { label: string; color: string }> = {
 const SLOTS: Record<string, string> = {
   weapon: 'Arma', helmet: 'Cabeça', chest: 'Tronco', gloves: 'Mãos',
   boots: 'Pés', ring: 'Mão (anel)', necklace: 'Pescoço', none: 'Nenhum',
-}
-
-function Tip({ text }: { text: string }) {
-  return (
-    <span className="ml-1 cursor-help text-muted-foreground" title={text}>?</span>
-  )
 }
 
 const emptyForm = {
@@ -79,12 +75,14 @@ export default function ItemsPage() {
           <h2 className="text-2xl font-semibold">Itens</h2>
           <p className="text-sm text-muted-foreground">Cadastre armas, armaduras e consumíveis do jogo</p>
         </div>
-        <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded">+ Novo Item</button>
+        <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2">
+          <Plus size={16} /> Novo Item
+        </button>
       </div>
 
-      {/* Tabela de Balanceamento */}
+      {/* Tabela de Balanceamento - Sempre visível */}
       <div className="border rounded p-4 mb-4">
-        <h3 className="font-semibold mb-2">Referência de Balanceamento</h3>
+        <h3 className="font-semibold mb-2 flex items-center gap-2"><Shield size={16} /> Referência de Balanceamento</h3>
         <div className="grid grid-cols-6 gap-2 text-xs">
           {Object.entries(RARITIES).map(([key, { label, color }]) => (
             <div key={key} className="border rounded p-2" style={{ borderColor: color }}>
@@ -93,85 +91,86 @@ export default function ItemsPage() {
             </div>
           ))}
         </div>
+        <p className="text-xs text-muted-foreground mt-2">💡 Raridades mais altas multiplicam os stats base do item. Use como referência ao balancear.</p>
       </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="border rounded p-4 mb-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm">Slug <Tip text="Identificador único do item (sem espaços). Usado no código do jogo. Ex.: espada_aco_comum" /></label>
+              <label className="text-sm">Slug <Tooltip text="Identificador único do item (sem espaços). Usado no código do jogo. Ex.: espada_aco_comum" /></label>
               <input name="slug" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} className="w-full border rounded px-2 py-1" required />
             </div>
             <div>
-              <label className="text-sm">Nome de Exibição <Tip text="Nome que o jogador verá no jogo" /></label>
+              <label className="text-sm">Nome de Exibição <Tooltip text="Nome que o jogador verá no jogo" /></label>
               <input name="name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full border rounded px-2 py-1" required />
             </div>
             <div>
-              <label className="text-sm">Tipo de Item <Tip text="Categoria do item. Armas causam dano, armaduras defendem, consumíveis são usados uma vez" /></label>
+              <label className="text-sm">Tipo de Item <Tooltip text="Categoria do item. Armas causam dano, armaduras defendem, consumíveis são usados uma vez" /></label>
               <select name="type" value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="w-full border rounded px-2 py-1">
                 {Object.entries(ITEM_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm">Raridade <Tip text="Define o poder e a cor do nome do item. Comum é o mais fraco, Mítico o mais forte" /></label>
+              <label className="text-sm">Raridade <Tooltip text="Define o poder e a cor do nome do item. Comum é o mais fraco, Mítico o mais forte" /></label>
               <select name="rarity" value={form.rarity} onChange={e => setForm({...form, rarity: e.target.value})} className="w-full border rounded px-2 py-1">
                 {Object.entries(RARITIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm">Slot de Equipamento <Tip text="Onde o item é equipado. 'Nenhum' para consumíveis e materiais" /></label>
+              <label className="text-sm">Slot de Equipamento <Tooltip text="Onde o item é equipado. 'Nenhum' para consumíveis e materiais" /></label>
               <select name="slot" value={form.slot} onChange={e => setForm({...form, slot: e.target.value})} className="w-full border rounded px-2 py-1">
                 {Object.entries(SLOTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm">Preço em Ouro <Tip text="Quanto o jogador paga para comprar na loja (0 = não vendável)" /></label>
+              <label className="text-sm flex items-center gap-1"><Coins size={14} /> Preço em Ouro <Tooltip text="Quanto o jogador paga para comprar na loja (0 = não vendável)" /></label>
               <input name="price_gold" type="number" value={form.price_gold} onChange={e => setForm({...form, price_gold: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Preço em Gemas <Tip text="Moeda premium (comprada com dinheiro real). 0 = só ouro" /></label>
+              <label className="text-sm flex items-center gap-1"><Gem size={14} /> Preço em Gemas <Tooltip text="Moeda premium (comprada com dinheiro real). 0 = só ouro" /></label>
               <input name="price_gems" type="number" value={form.price_gems} onChange={e => setForm({...form, price_gems: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Máximo por Pilha <Tip text="Quantos deste item cabem num slot do inventário. 1 para equipamentos" /></label>
+              <label className="text-sm">Máximo por Pilha <Tooltip text="Quantos deste item cabem num slot do inventário. 1 para equipamentos" /></label>
               <input name="max_stack" type="number" value={form.max_stack} onChange={e => setForm({...form, max_stack: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Ataque (ATK) <Tip text="Dano que o item adiciona ao jogador. 0 para armaduras puras" /></label>
+              <label className="text-sm flex items-center gap-1"><Sword size={14} /> Ataque (ATK) <Tooltip text="Dano que o item adiciona ao jogador. 0 para armaduras puras" /></label>
               <input name="atk" type="number" value={form.atk} onChange={e => setForm({...form, atk: e.target.value})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Defesa (DEF) <Tip text="Redução de dano recebido. Alta em armaduras, zero em armas ofensivas" /></label>
+              <label className="text-sm flex items-center gap-1"><Shield size={14} /> Defesa (DEF) <Tooltip text="Redução de dano recebido. Alta em armaduras, zero em armas ofensivas" /></label>
               <input name="def" type="number" value={form.def} onChange={e => setForm({...form, def: e.target.value})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Vida (HP) <Tip text="Pontos de vida extras concedidos ao equipar" /></label>
+              <label className="text-sm flex items-center gap-1"><Heart size={14} /> Vida (HP) <Tooltip text="Pontos de vida extras concedidos ao equipar" /></label>
               <input name="hp" type="number" value={form.hp} onChange={e => setForm({...form, hp: e.target.value})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Crítico (CRIT) <Tip text="Chance de crítico (%). Ex.: 5 = 5% de chance de dano dobrado" /></label>
+              <label className="text-sm">Crítico (CRIT) <Tooltip text="Chance de crítico (%). Ex.: 5 = 5% de chance de dano dobrado" /></label>
               <input name="crit" type="number" value={form.crit} onChange={e => setForm({...form, crit: e.target.value})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Ordem de Exibição <Tip text="Menor número = aparece primeiro nas listas. Use para ordenar a loja" /></label>
+              <label className="text-sm">Ordem de Exibição <Tooltip text="Menor número = aparece primeiro nas listas. Use para ordenar a loja" /></label>
               <input name="sort_order" type="number" value={form.sort_order} onChange={e => setForm({...form, sort_order: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">URL do Ícone <Tip text="Imagem 64x64 ou 128x128 PNG com fundo transparente. Obtida após upload no Storage" /></label>
+              <label className="text-sm">URL do Ícone <Tooltip text="Imagem 64x64 ou 128x128 PNG com fundo transparente. Obtida após upload no Storage" /></label>
               <input name="icon_url" value={form.icon_url} onChange={e => setForm({...form, icon_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
             </div>
             <div>
-              <label className="text-sm">URL do Sprite <Tip text="Imagem do item no inventário ou loja (opcional). PNG com transparência" /></label>
+              <label className="text-sm">URL do Sprite <Tooltip text="Imagem do item no inventário ou loja (opcional). PNG com transparência" /></label>
               <input name="sprite_url" value={form.sprite_url} onChange={e => setForm({...form, sprite_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
             </div>
           </div>
           <div>
-            <label className="text-sm">Descrição <Tip text="Texto exibido ao jogador passar o mouse no item" /></label>
+            <label className="text-sm">Descrição <Tooltip text="Texto exibido ao jogador passar o mouse no item" /></label>
             <textarea name="description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="Uma espada simples de aço..." />
           </div>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2"><input type="checkbox" name="stackable" checked={form.stackable} onChange={e => setForm({...form, stackable: e.target.checked})} /> Empilhável <Tip text="Se o item pode ter quantidade > 1 num slot (ex.: poções)" /></label>
-            <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} /> Ativo <Tip text="Itens inativos ficam salvos mas não aparecem no jogo" /></label>
+            <label className="flex items-center gap-2"><input type="checkbox" name="stackable" checked={form.stackable} onChange={e => setForm({...form, stackable: e.target.checked})} /> Empilhável <Tooltip text="Se o item pode ter quantidade > 1 num slot (ex.: poções)" /></label>
+            <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} /> Ativo <Tooltip text="Itens inativos ficam salvos mas não aparecem no jogo" /></label>
           </div>
           <div className="flex gap-2">
             <button type="submit" disabled={isPending} className="px-4 py-2 bg-primary text-primary-foreground rounded disabled:opacity-50">{isPending ? 'Salvando...' : editing ? 'Atualizar' : 'Criar'}</button>
@@ -199,8 +198,8 @@ export default function ItemsPage() {
                 <td className="p-2">{item.price_gold > 0 ? `${item.price_gold} ouro` : ''} {item.price_gems > 0 ? `${item.price_gems} gemas` : ''}</td>
                 <td className="p-2">{item.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
-                  <button onClick={() => handleEdit(item)} className="text-blue-600 underline">Editar</button>
-                  <button onClick={() => handleDelete(item.id)} className="text-red-600 underline">Excluir</button>
+                  <button onClick={() => handleEdit(item)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleDelete(item.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>
             ))}

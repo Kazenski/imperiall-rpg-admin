@@ -5,10 +5,8 @@ import { listLootTables, listLootEntries, createLootTable, updateLootTable, dele
 import { listMobs } from '@/lib/actions/mobs'
 import { listStages } from '@/lib/actions/stages'
 import { listItems } from '@/lib/actions/items'
-
-function Tip({ text }: { text: string }) {
-  return <span className="ml-1 cursor-help text-muted-foreground" title={text}>?</span>
-}
+import { Tooltip } from '@/components/ui/tooltip'
+import { Coins, Plus, Pencil, Trash2, Gift } from 'lucide-react'
 
 const emptyTable = { slug: '', name: '', description: '', mob_id: '', stage_id: '', is_active: true }
 const emptyEntry = { loot_table_id: '', item_id: '', quantity_min: 1, quantity_max: 1, weight: 100, drop_chance_percent: '', guaranteed: false, sort_order: 0 }
@@ -81,18 +79,21 @@ export default function LootTablesPage() {
     <div>
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h2 className="text-2xl font-semibold">Tabelas de Loot</h2>
+          <h2 className="text-2xl font-semibold flex items-center gap-2"><Gift size={20} /> Tabelas de Loot</h2>
           <p className="text-sm text-muted-foreground">Configure o que dropa ao derrotar inimigos ou limpar fases</p>
         </div>
-        <button onClick={() => { setEditing(null); setForm(emptyTable); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded">+ Nova Tabela</button>
+        <button onClick={() => { setEditing(null); setForm(emptyTable); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2">
+          <Plus size={16} /> Nova Tabela
+        </button>
       </div>
 
+      {/* Referência de Balanceamento - Sempre visível */}
       <div className="border rounded p-4 mb-4">
-        <h3 className="font-semibold mb-2">Como funciona o sistema de drop</h3>
-        <div className="text-sm text-muted-foreground space-y-1">
-          <p><strong>Peso:</strong> chance relativa. Ex.: Item A (peso 70) + Item B (peso 30) = 70% vs 30%.</p>
-          <p><strong>Drop %:</strong> chance exata que substitui o cálculo de peso.</p>
-          <p><strong>Garantido:</strong> sempre dropa (recompensa fixa de chefão).</p>
+        <h3 className="font-semibold mb-2 flex items-center gap-2"><Coins size={16} /> Como funciona o sistema de drop</h3>
+        <div className="text-sm text-muted-foreground space-y-2">
+          <p><strong className="text-foreground">Peso:</strong> chance relativa. Ex.: Item A (peso 70) + Item B (peso 30) = 70% vs 30%.</p>
+          <p><strong className="text-foreground">Chance Exata %:</strong> se preenchida, ignora o cálculo de peso e usa este valor fixo.</p>
+          <p><strong className="text-foreground">Garantido:</strong> sempre dropa quando a tabela é rolada (recompensa fixa de chefão).</p>
         </div>
       </div>
 
@@ -100,7 +101,7 @@ export default function LootTablesPage() {
         <form onSubmit={handleSubmit} className="border rounded p-4 mb-4 space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-sm">Slug <Tip text="Identificador único. Ex.: loot_slime, loot_dragao" /></label>
+              <label className="text-sm">Slug <Tooltip text="Identificador único. Ex.: loot_slime, loot_dragao" /></label>
               <input name="slug" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} className="w-full border rounded px-2 py-1" required />
             </div>
             <div>
@@ -108,14 +109,14 @@ export default function LootTablesPage() {
               <input name="name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full border rounded px-2 py-1" required />
             </div>
             <div>
-              <label className="text-sm">Vincular a Mob (opcional) <Tip text="Se preenchido, esta tabela é usada apenas ao derrotar este inimigo" /></label>
+              <label className="text-sm">Vincular a Inimigo (opcional) <Tooltip text="Se preenchido, esta tabela é usada apenas ao derrotar este inimigo" /></label>
               <select name="mob_id" value={form.mob_id} onChange={e => setForm({...form, mob_id: e.target.value})} className="w-full border rounded px-2 py-1">
                 <option value="">Tabela global</option>
                 {mobs.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm">Vincular a Fase (opcional) <Tip text="Se preenchido, esta tabela é usada ao limpar esta fase" /></label>
+              <label className="text-sm">Vincular a Fase (opcional) <Tooltip text="Se preenchido, esta tabela é usada ao limpar esta fase" /></label>
               <select name="stage_id" value={form.stage_id} onChange={e => setForm({...form, stage_id: e.target.value})} className="w-full border rounded px-2 py-1">
                 <option value="">Tabela global</option>
                 {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -145,9 +146,9 @@ export default function LootTablesPage() {
                 </span>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => handleAddEntry(table.id)} className="text-sm text-blue-600 underline">+ Item</button>
-                <button onClick={() => handleEdit(table)} className="text-sm text-blue-600 underline">Editar</button>
-                <button onClick={() => handleDelete(table.id)} className="text-sm text-red-600 underline">Excluir</button>
+                <button onClick={() => handleAddEntry(table.id)} className="text-sm text-blue-600 underline inline-flex items-center gap-1"><Plus size={12} /> Item</button>
+                <button onClick={() => handleEdit(table)} className="text-sm text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                <button onClick={() => handleDelete(table.id)} className="text-sm text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
               </div>
             </div>
             <div className="text-sm space-y-1">
@@ -175,26 +176,26 @@ export default function LootTablesPage() {
           <input type="hidden" name="loot_table_id" value={entryTableId} />
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-sm">Item <Tip text="Item que pode dropar desta tabela" /></label>
+              <label className="text-sm">Item <Tooltip text="Item que pode dropar desta tabela" /></label>
               <select name="item_id" value={entryForm.item_id} onChange={e => setEntryForm({...entryForm, item_id: e.target.value})} className="w-full border rounded px-2 py-1" required>
                 <option value="">—</option>
                 {items.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm">Quantidade Mín <Tip text="Quantidade mínima que dropa (para drops aleatórios)" /></label>
+              <label className="text-sm">Quantidade Mín <Tooltip text="Quantidade mínima que dropa (para drops aleatórios)" /></label>
               <input name="quantity_min" type="number" value={entryForm.quantity_min} onChange={e => setEntryForm({...entryForm, quantity_min: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Quantidade Máx <Tip text="Quantidade máxima que dropa. Se igual à mínima, dropa sempre a mesma quantidade" /></label>
+              <label className="text-sm">Quantidade Máx <Tooltip text="Quantidade máxima que dropa. Se igual à mínima, dropa sempre a mesma quantidade" /></label>
               <input name="quantity_max" type="number" value={entryForm.quantity_max} onChange={e => setEntryForm({...entryForm, quantity_max: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Peso <Tip text="Chance relativa de drop. Quanto maior, mais provável. Ex.: 100 = comum, 10 = raro" /></label>
+              <label className="text-sm">Peso <Tooltip text="Chance relativa de drop. Quanto maior, mais provável. Ex.: 100 = comum, 10 = raro" /></label>
               <input name="weight" type="number" value={entryForm.weight} onChange={e => setEntryForm({...entryForm, weight: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Chance Exata % (opcional) <Tip text="Se preenchido, ignora o peso e usa esta chance fixa. Ex.: 5 = 5% de chance" /></label>
+              <label className="text-sm">Chance Exata % (opcional) <Tooltip text="Se preenchido, ignora o peso e usa esta chance fixa. Ex.: 5 = 5% de chance" /></label>
               <input name="drop_chance_percent" type="number" step="0.01" value={entryForm.drop_chance_percent} onChange={e => setEntryForm({...entryForm, drop_chance_percent: e.target.value})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
@@ -202,7 +203,7 @@ export default function LootTablesPage() {
               <input name="sort_order" type="number" value={entryForm.sort_order} onChange={e => setEntryForm({...entryForm, sort_order: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
           </div>
-          <label className="flex items-center gap-2"><input type="checkbox" name="guaranteed" checked={entryForm.guaranteed} onChange={e => setEntryForm({...entryForm, guaranteed: e.target.checked})} /> Drop garantido <Tip text="Se ativado, o item SEMPRE dropa quando esta tabela é rolada" /></label>
+          <label className="flex items-center gap-2"><input type="checkbox" name="guaranteed" checked={entryForm.guaranteed} onChange={e => setEntryForm({...entryForm, guaranteed: e.target.checked})} /> Drop garantido <Tooltip text="Se ativado, o item SEMPRE dropa quando esta tabela é rolada" /></label>
           <div className="flex gap-2">
             <button type="submit" disabled={isPending} className="px-4 py-2 bg-primary text-primary-foreground rounded disabled:opacity-50">{isPending ? 'Salvando...' : 'Adicionar'}</button>
             <button type="button" onClick={() => setShowEntryForm(false)} className="px-4 py-2 border rounded">Cancelar</button>

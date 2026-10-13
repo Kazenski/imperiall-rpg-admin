@@ -2,15 +2,13 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { listSkills, createSkill, updateSkill, deleteSkill } from '@/lib/actions/skills'
+import { Tooltip } from '@/components/ui/tooltip'
+import { Zap, Plus, Pencil, Trash2 } from 'lucide-react'
 
 const SKILL_TYPES: Record<string, string> = { active: 'Ativa', passive: 'Passiva' }
 const TARGETS: Record<string, string> = {
   self: 'Próprio jogador', enemy: 'Um inimigo', enemies: 'Todos os inimigos',
   ally: 'Um aliado', allies: 'Todos os aliados', aoe: 'Área (ao redor)',
-}
-
-function Tip({ text }: { text: string }) {
-  return <span className="ml-1 cursor-help text-muted-foreground" title={text}>?</span>
 }
 
 const emptyForm = {
@@ -61,14 +59,16 @@ export default function SkillsPage() {
           <h2 className="text-2xl font-semibold">Habilidades</h2>
           <p className="text-sm text-muted-foreground">Cadastre skills ativas e passivas do jogador e dos inimigos</p>
         </div>
-        <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded">+ Nova Skill</button>
+        <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2">
+          <Plus size={16} /> Nova Skill
+        </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="border rounded p-4 mb-4 space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-sm">Slug <Tip text="Identificador único. Ex.: golpe_poderoso, cura_basica" /></label>
+              <label className="text-sm">Slug <Tooltip text="Identificador único. Ex.: golpe_poderoso, cura_basica" /></label>
               <input name="slug" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} className="w-full border rounded px-2 py-1" required />
             </div>
             <div>
@@ -76,31 +76,31 @@ export default function SkillsPage() {
               <input name="name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full border rounded px-2 py-1" required />
             </div>
             <div>
-              <label className="text-sm">Tipo <Tip text="Ativa: jogador usa manualmente. Passiva: efeito automático (ex.: +10% HP)" /></label>
+              <label className="text-sm">Tipo <Tooltip text="Ativa: jogador usa manualmente. Passiva: efeito automático (ex.: +10% HP)" /></label>
               <select name="type" value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="w-full border rounded px-2 py-1">
                 {Object.entries(SKILL_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm">Alvo <Tip text="Quem recebe o efeito da skill" /></label>
+              <label className="text-sm">Alvo <Tooltip text="Quem recebe o efeito da skill" /></label>
               <select name="target" value={form.target} onChange={e => setForm({...form, target: e.target.value})} className="w-full border rounded px-2 py-1">
                 {Object.entries(TARGETS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm">Recarga (ms) <Tip text="Tempo de espera em milissegundos antes de poder usar de novo. 0 = sem recarga" /></label>
+              <label className="text-sm">Recarga (ms) <Tooltip text="Tempo de espera em milissegundos antes de poder usar de novo. 0 = sem recarga" /></label>
               <input name="cooldown_ms" type="number" value={form.cooldown_ms} onChange={e => setForm({...form, cooldown_ms: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Custo de Mana <Tip text="Mana consumida ao usar. 0 = skill gratuita" /></label>
+              <label className="text-sm">Custo de Mana <Tooltip text="Mana consumida ao usar. 0 = skill gratuita" /></label>
               <input name="mana_cost" type="number" value={form.mana_cost} onChange={e => setForm({...form, mana_cost: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Dano Base <Tip text="Quantidade de dano causado (0 para skills de suporte/cura)" /></label>
+              <label className="text-sm">Dano Base <Tooltip text="Quantidade de dano causado (0 para skills de suporte/cura)" /></label>
               <input name="base_damage" type="number" value={form.base_damage} onChange={e => setForm({...form, base_damage: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Chave de Animação <Tip text="Nome da animação no código do jogo. Ex.: slash_01, fireball_cast" /></label>
+              <label className="text-sm">Chave de Animação <Tooltip text="Nome da animação no código do jogo. Ex.: slash_01, fireball_cast" /></label>
               <input name="animation_key" value={form.animation_key} onChange={e => setForm({...form, animation_key: e.target.value})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
@@ -108,16 +108,16 @@ export default function SkillsPage() {
               <input name="sort_order" type="number" value={form.sort_order} onChange={e => setForm({...form, sort_order: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">URL do Ícone <Tip text="Ícone da skill na UI (64x64 ou 128x128 PNG)" /></label>
+              <label className="text-sm">URL do Ícone <Tooltip text="Ícone da skill na UI (64x64 ou 128x128 PNG)" /></label>
               <input name="icon_url" value={form.icon_url} onChange={e => setForm({...form, icon_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
             </div>
           </div>
           <div>
-            <label className="text-sm">Descrição <Tip text="Texto exibido ao jogador. Ex.: 'Causa 150 de dano e atordoa o inimigo por 1s'" /></label>
+            <label className="text-sm">Descrição <Tooltip text="Texto exibido ao jogador. Ex.: 'Causa 150 de dano e atordoa o inimigo por 1s'" /></label>
             <textarea name="description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded px-2 py-1" />
           </div>
           <div>
-            <label className="text-sm">Efeitos (JSON) <Tip text="Efeitos adicionais em formato JSON. Ex.: {&quot;stun_ms&quot;:1000} para atordoar, {&quot;heal&quot;:50} para curar, {&quot;dot&quot;:{&quot;dmg&quot;:10,&quot;ticks&quot;:3}} para dano ao longo do tempo" /></label>
+            <label className="text-sm">Efeitos (JSON) <Tooltip text='Efeitos adicionais em formato JSON. Ex.: {"stun_ms":1000} para atordoar, {"heal":50} para curar' /></label>
             <textarea name="effects" value={form.effects} onChange={e => setForm({...form, effects: e.target.value})} className="w-full border rounded px-2 py-1 font-mono text-xs" rows={4} placeholder='{"stun_ms":1000}' />
           </div>
           <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} /> Ativa</label>
@@ -146,8 +146,8 @@ export default function SkillsPage() {
                 <td className="p-2">{skill.cooldown_ms}ms</td><td className="p-2">{skill.mana_cost}</td><td className="p-2">{skill.base_damage}</td>
                 <td className="p-2">{skill.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
-                  <button onClick={() => handleEdit(skill)} className="text-blue-600 underline">Editar</button>
-                  <button onClick={() => handleDelete(skill.id)} className="text-red-600 underline">Excluir</button>
+                  <button onClick={() => handleEdit(skill)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleDelete(skill.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>
             ))}

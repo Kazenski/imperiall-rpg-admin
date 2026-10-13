@@ -2,18 +2,14 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { listMobs, createMob, updateMob, deleteMob } from '@/lib/actions/mobs'
+import { Tooltip } from '@/components/ui/tooltip'
+import { Sword, Shield, Heart, Coins, Star, Plus, Pencil, Trash2, Zap } from 'lucide-react'
 
 const TIERS: Record<string, { label: string; color: string }> = {
   normal: { label: 'Normal', color: '#9ca3af' },
   elite: { label: 'Elite', color: '#3b82f6' },
   boss: { label: 'Chefão', color: '#ef4444' },
   mini_boss: { label: 'Sub-Chefão', color: '#f59e0b' },
-}
-
-function Tip({ text }: { text: string }) {
-  return (
-    <span className="ml-1 cursor-help text-muted-foreground" title={text}>?</span>
-  )
 }
 
 const emptyForm = {
@@ -69,12 +65,14 @@ export default function MobsPage() {
           <h2 className="text-2xl font-semibold">Inimigos (Mobs)</h2>
           <p className="text-sm text-muted-foreground">Cadastre os monstros do jogo com seus sprites de animação</p>
         </div>
-        <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded">+ Novo Inimigo</button>
+        <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2">
+          <Plus size={16} /> Novo Inimigo
+        </button>
       </div>
 
-      {/* Referência de Balanceamento */}
+      {/* Referência de Tier */}
       <div className="border rounded p-4 mb-4">
-        <h3 className="font-semibold mb-2">Referência de Tier</h3>
+        <h3 className="font-semibold mb-2 flex items-center gap-2"><Zap size={16} /> Referência de Tier</h3>
         <div className="grid grid-cols-4 gap-2 text-xs">
           {Object.entries(TIERS).map(([key, { label, color }]) => (
             <div key={key} className="border rounded p-2" style={{ borderColor: color }}>
@@ -94,85 +92,85 @@ export default function MobsPage() {
         <form onSubmit={handleSubmit} className="border rounded p-4 mb-4 space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-sm">Slug <Tip text="Identificador único (sem espaços). Ex.: slime_verde, dragao_fogo" /></label>
+              <label className="text-sm">Slug <Tooltip text="Identificador único (sem espaços). Ex.: slime_verde, dragao_fogo" /></label>
               <input name="slug" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} className="w-full border rounded px-2 py-1" required />
             </div>
             <div>
-              <label className="text-sm">Nome de Exibição <Tip text="Nome que o jogador verá" /></label>
+              <label className="text-sm">Nome de Exibição <Tooltip text="Nome que o jogador verá" /></label>
               <input name="name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full border rounded px-2 py-1" required />
             </div>
             <div>
-              <label className="text-sm">Tier <Tip text="Força do inimigo. Normal = comum, Elite = forte, Chefão = boss de fase, Sub-Chefão = semi-boss" /></label>
+              <label className="text-sm">Tier <Tooltip text="Força do inimigo. Normal = comum, Elite = forte, Chefão = boss de fase, Sub-Chefão = semi-boss" /></label>
               <select name="tier" value={form.tier} onChange={e => setForm({...form, tier: e.target.value})} className="w-full border rounded px-2 py-1">
                 {Object.entries(TIERS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm">Vida (HP) <Tip text="Pontos de vida. Jogador precisa causar esta quantidade de dano para derrotar" /></label>
+              <label className="text-sm flex items-center gap-1"><Heart size={14} /> Vida (HP) <Tooltip text="Pontos de vida. Jogador precisa causar esta quantidade de dano para derrotar" /></label>
               <input name="hp" type="number" value={form.hp} onChange={e => setForm({...form, hp: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Ataque (ATK) <Tip text="Dano que causa ao jogador a cada golpe" /></label>
+              <label className="text-sm flex items-center gap-1"><Sword size={14} /> Ataque (ATK) <Tooltip text="Dano que causa ao jogador a cada golpe" /></label>
               <input name="atk" type="number" value={form.atk} onChange={e => setForm({...form, atk: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Defesa (DEF) <Tip text="Redução de dano recebido. Cada ponto reduz 1 de dano por golpe" /></label>
+              <label className="text-sm flex items-center gap-1"><Shield size={14} /> Defesa (DEF) <Tooltip text="Redução de dano recebido. Cada ponto reduz 1 de dano por golpe" /></label>
               <input name="def" type="number" value={form.def} onChange={e => setForm({...form, def: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Recompensa de EXP <Tip text="XP que o jogador ganha ao derrotar" /></label>
+              <label className="text-sm flex items-center gap-1"><Star size={14} /> Recompensa de EXP <Tooltip text="XP que o jogador ganha ao derrotar" /></label>
               <input name="exp_reward" type="number" value={form.exp_reward} onChange={e => setForm({...form, exp_reward: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Recompensa de Ouro <Tip text="Ouro que dropa ao derrotar" /></label>
+              <label className="text-sm flex items-center gap-1"><Coins size={14} /> Recompensa de Ouro <Tooltip text="Ouro que dropa ao derrotar" /></label>
               <input name="gold_reward" type="number" value={form.gold_reward} onChange={e => setForm({...form, gold_reward: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Velocidade <Tip text="Velocidade de movimento na tela (100 = normal, 200 = rápido)" /></label>
+              <label className="text-sm">Velocidade <Tooltip text="Velocidade de movimento na tela (100 = normal, 200 = rápido)" /></label>
               <input name="speed" type="number" value={form.speed} onChange={e => setForm({...form, speed: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Intervalo de Ataque (ms) <Tip text="Tempo entre ataques em milissegundos. Ex.: 1000 = ataca a cada 1 segundo" /></label>
+              <label className="text-sm">Intervalo de Ataque (ms) <Tooltip text="Tempo entre ataques em milissegundos. Ex.: 1000 = ataca a cada 1 segundo" /></label>
               <input name="attack_cooldown_ms" type="number" value={form.attack_cooldown_ms} onChange={e => setForm({...form, attack_cooldown_ms: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Escala (Tamanho) <Tip text="Tamanho do sprite na tela. 1.0 = normal, 2.0 = dobro do tamanho" /></label>
+              <label className="text-sm">Escala (Tamanho) <Tooltip text="Tamanho do sprite na tela. 1.0 = normal, 2.0 = dobro do tamanho" /></label>
               <input name="scale" type="number" step="0.25" value={form.scale} onChange={e => setForm({...form, scale: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Hitbox Largura <Tip text="Largura da área de colisão em pixels. Geralmente igual à largura do sprite" /></label>
+              <label className="text-sm">Hitbox Largura <Tooltip text="Largura da área de colisão em pixels. Geralmente igual à largura do sprite" /></label>
               <input name="hitbox_w" type="number" value={form.hitbox_w} onChange={e => setForm({...form, hitbox_w: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Hitbox Altura <Tip text="Altura da área de colisão em pixels" /></label>
+              <label className="text-sm">Hitbox Altura <Tooltip text="Altura da área de colisão em pixels" /></label>
               <input name="hitbox_h" type="number" value={form.hitbox_h} onChange={e => setForm({...form, hitbox_h: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">URL Sprite Idle <Tip text="Imagem parada (2-4 frames). PNG com fundo transparente, ex.: 64x64 ou 128x128" /></label>
+              <label className="text-sm">URL Sprite Idle <Tooltip text="Imagem parada (2-4 frames). PNG com fundo transparente, ex.: 64x64 ou 128x128" /></label>
               <input name="sprite_idle_url" value={form.sprite_idle_url} onChange={e => setForm({...form, sprite_idle_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
             </div>
             <div>
-              <label className="text-sm">URL Sprite Run <Tip text="Animação de corrida (4-6 frames)" /></label>
+              <label className="text-sm">URL Sprite Run <Tooltip text="Animação de corrida (4-6 frames)" /></label>
               <input name="sprite_run_url" value={form.sprite_run_url} onChange={e => setForm({...form, sprite_run_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
             </div>
             <div>
-              <label className="text-sm">URL Sprite Attack <Tip text="Animação de ataque (3-4 frames)" /></label>
+              <label className="text-sm">URL Sprite Attack <Tooltip text="Animação de ataque (3-4 frames)" /></label>
               <input name="sprite_attack_url" value={form.sprite_attack_url} onChange={e => setForm({...form, sprite_attack_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
             </div>
             <div>
-              <label className="text-sm">URL Sprite Hit <Tip text="Animação ao tomar dano (1-2 frames)" /></label>
+              <label className="text-sm">URL Sprite Hit <Tooltip text="Animação ao tomar dano (1-2 frames)" /></label>
               <input name="sprite_hit_url" value={form.sprite_hit_url} onChange={e => setForm({...form, sprite_hit_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
             </div>
             <div>
-              <label className="text-sm">URL Sprite Death <Tip text="Animação de morte (2-3 frames)" /></label>
+              <label className="text-sm">URL Sprite Death <Tooltip text="Animação de morte (2-3 frames)" /></label>
               <input name="sprite_death_url" value={form.sprite_death_url} onChange={e => setForm({...form, sprite_death_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
             </div>
           </div>
           <div>
-            <label className="text-sm">Descrição <Tip text="Texto exibido no bestiário ou tooltip do inimigo" /></label>
+            <label className="text-sm">Descrição <Tooltip text="Texto exibido no bestiário ou tooltip do inimigo" /></label>
             <textarea name="description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="Uma criatura..." />
           </div>
-          <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} /> Ativo <Tip text="Inimigos inativos ficam salvos mas não aparecem no jogo" /></label>
+          <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} /> Ativo <Tooltip text="Inimigos inativos ficam salvos mas não aparecem no jogo" /></label>
           <div className="flex gap-2">
             <button type="submit" disabled={isPending} className="px-4 py-2 bg-primary text-primary-foreground rounded disabled:opacity-50">{isPending ? 'Salvando...' : editing ? 'Atualizar' : 'Criar'}</button>
             <button type="button" onClick={() => { setShowForm(false); setEditing(null) }} className="px-4 py-2 border rounded">Cancelar</button>
@@ -198,8 +196,8 @@ export default function MobsPage() {
                 <td className="p-2">{mob.exp_reward}</td><td className="p-2">{mob.gold_reward}</td>
                 <td className="p-2">{mob.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
-                  <button onClick={() => handleEdit(mob)} className="text-blue-600 underline">Editar</button>
-                  <button onClick={() => handleDelete(mob.id)} className="text-red-600 underline">Excluir</button>
+                  <button onClick={() => handleEdit(mob)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleDelete(mob.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>
             ))}
