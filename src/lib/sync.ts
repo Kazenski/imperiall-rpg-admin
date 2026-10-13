@@ -45,7 +45,21 @@ function serviceClient(url?: string, key?: string): SupabaseClient {
       '(sem prefixo NEXT_PUBLIC_) e faça redeploy.',
     );
   }
-  return createClient(url, key, { auth: { persistSession: false } });
+  // Barra final na URL quebra as chamadas (/rest vira //rest).
+  const cleanUrl = url.trim().replace(/\/+$/, '');
+  return createClient(cleanUrl, key.trim(), { auth: { persistSession: false } });
+}
+
+/** Mensagem de erro com o máximo de detalhe disponível (sem vazar chaves). */
+function errMsg(prefix: string, error: any): string {
+  const parts = [
+    error?.message,
+    error?.code ? `código ${error.code}` : '',
+    error?.status ? `HTTP ${error.status}` : '',
+    error?.hint,
+  ].filter(Boolean);
+  const detail = parts.join(' • ') || 'falha desconhecida';
+  return `${prefix}: ${detail}`;
 }
 
 export function getSyncClients() {
@@ -60,7 +74,7 @@ async function readAll(client: SupabaseClient, table: string) {
   let offset = 0;
   for (;;) {
     const { data, error } = await client.from(table).select('*').range(offset, offset + 999);
-    if (error) throw new Error(`leitura ${table}: ${error.message}`);
+    if (error) throw new Error(errMsg(`leitura ${table}`, error));
     rows.push(...(data ?? []));
     if (!data || data.length < 1000) break;
     offset += 1000;
@@ -70,7 +84,7 @@ async function readAll(client: SupabaseClient, table: string) {
 
 async function wipe(client: SupabaseClient, table: string) {
   const { error } = await client.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  if (error) throw new Error(`limpeza ${table}: ${error.message}`);
+  if (error) throw new Error(errMsg(`limpeza ${table}`, error));
 }
 
 /** Copia tudo do oficial para o teste (apaga o teste antes). */
@@ -108,8 +122,8 @@ export async function diffCounts(): Promise<{ table: string; prod: number; stagi
       prod.from(t).select('id', { count: 'exact', head: true }),
       stag.from(t).select('id', { count: 'exact', head: true }),
     ]);
-    if (p.error) throw new Error(`oficial ${t}: ${p.error.message}`);
-    if (s.error) throw new Error(`teste ${t}: ${s.error.message}`);
+    if (p.error) throw new Error(errMsg(`oficial ${t}`, p.error));
+    if (s.error) throw new Error(errMsg(`teste ${t}`, s.error));
     out.push({ table: t, prod: p.count ?? 0, staging: s.count ?? 0 });
   }
   return out;
@@ -128,9 +142,9 @@ async function insertRows(client: SupabaseClient, table: string, rows: any[], up
     ? client.from(table).upsert(payload, { onConflict: 'id' })
     : client.from(table).insert(payload);
   const { error } = await query;
-  if (error) throw new Error(`gravação ${table}: ${error.message}`);
+  if (error) throw new Error(errMsg(`gravação ${table}`, error));
   for (const f of fixups) {
     const { error: uErr } = await client.from(table).update({ requires_node_id: f.requires_node_id }).eq('id', f.id);
-    if (uErr) throw new Error(`ajuste ${table}: ${uErr.message}`);
+    if (uErr) throw new Error(errMsg(`ajuste ${table}`, uErr));
   }
 }
