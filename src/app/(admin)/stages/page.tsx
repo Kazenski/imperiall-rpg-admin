@@ -4,7 +4,9 @@ import { useState, useEffect, useTransition } from 'react'
 import { listStages, createStage, updateStage, deleteStage } from '@/lib/actions/stages'
 import { listZones, createZone, updateZone, deleteZone } from '@/lib/actions/zones'
 import { Tooltip } from '@/components/ui/tooltip'
-import { Map, Plus, Pencil, Trash2, Crown } from 'lucide-react'
+import { Map, Plus, Pencil, Trash2, Eye } from 'lucide-react'
+import { ImageUpload } from '@/components/ui/image-upload'
+import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
 
 function Tip({ text }: { text: string }) {
   return <Tooltip text={text} />
@@ -26,6 +28,7 @@ export default function StagesPage() {
   const [zoneForm, setZoneForm] = useState(emptyZone)
   const [zoneEditing, setZoneEditing] = useState<any>(null)
   const [showZoneForm, setShowZoneForm] = useState(false)
+  const [viewingZone, setViewingZone] = useState<any>(null)
 
   const load = () => { listStages().then(setStages); listZones().then(setZones) }
   useEffect(() => { load() }, [])
@@ -107,9 +110,17 @@ export default function StagesPage() {
                 <label className="text-sm">Ordem de Exibição</label>
                 <input name="sort_order" type="number" value={zoneForm.sort_order} onChange={e => setZoneForm({...zoneForm, sort_order: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
               </div>
-              <div className="col-span-2">
-                <label className="text-sm">URL do Fundo (Background) <Tip text="Imagem de fundo da zona. Recomendado: 1920x1080 PNG ou JPG" /></label>
-                <input name="bg_url" value={zoneForm.bg_url} onChange={e => setZoneForm({...zoneForm, bg_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
+              <div className="col-span-3">
+                <ImageUpload
+                  label="Fundo da zona (Background)"
+                  fieldName="bg_url"
+                  tooltipText="Imagem de fundo 1920x1080 JPG ou PNG. Não precisa de transparência. Arraste ou clique para enviar."
+                  folder="backgrounds"
+                  value={zoneForm.bg_url}
+                  onChange={(url) => setZoneForm({ ...zoneForm, bg_url: url })}
+                  hint="JPG ou PNG 1920x1080 — fundo da fase"
+                  accept="image/png,image/jpeg,image/webp"
+                />
               </div>
             </div>
             <div>
@@ -129,15 +140,22 @@ export default function StagesPage() {
 
         <div className="border rounded overflow-x-auto mb-8">
           <table className="w-full text-sm">
-            <thead className="bg-muted"><tr><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Fundo</th><th className="p-2 text-left">Parallax</th><th className="p-2 text-left">Ativa</th><th className="p-2 text-left">Ações</th></tr></thead>
+            <thead className="bg-muted"><tr><th className="p-2 text-left">Fundo</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Parallax</th><th className="p-2 text-left">Ativa</th><th className="p-2 text-left">Ações</th></tr></thead>
             <tbody>
               {zones.map(zone => (
                 <tr key={zone.id} className="border-t">
-                  <td className="p-2 font-medium">{zone.name}</td>
-                  <td className="p-2">{zone.bg_url ? 'Sim' : 'Não'}</td>
+                  <td className="p-2">
+                    {zone.bg_url
+                      ? <img src={zone.bg_url} alt={zone.name} className="w-16 h-10 object-cover rounded border" />
+                      : <span className="text-muted-foreground text-xs">—</span>}
+                  </td>
+                  <td className="p-2 font-medium">
+                    <button onClick={() => setViewingZone(zone)} className="underline underline-offset-2 hover:text-primary text-left">{zone.name}</button>
+                  </td>
                   <td className="p-2">{zone.bg_parallax ? 'Sim' : 'Não'}</td>
                   <td className="p-2">{zone.is_active ? 'Sim' : 'Não'}</td>
                   <td className="p-2 flex gap-2">
+                    <button onClick={() => setViewingZone(zone)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                     <button onClick={() => handleZoneEdit(zone)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
                     <button onClick={() => handleZoneDelete(zone.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                   </td>
@@ -146,6 +164,16 @@ export default function StagesPage() {
             </tbody>
           </table>
         </div>
+
+        {viewingZone && (
+          <DetailModal title={viewingZone.name} onClose={() => setViewingZone(null)}>
+            <DetailImage label="Fundo" url={viewingZone.bg_url} size="w-full h-40" />
+            <DetailRow label="Slug" value={<code>{viewingZone.slug}</code>} />
+            <DetailRow label="Descrição" value={viewingZone.description || '—'} />
+            <DetailRow label="Parallax" value={viewingZone.bg_parallax ? 'Sim' : 'Não'} />
+            <DetailRow label="Ativa" value={viewingZone.is_active ? 'Sim' : 'Não'} />
+          </DetailModal>
+        )}
       </div>
 
       {/* STAGES */}

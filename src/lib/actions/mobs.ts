@@ -36,8 +36,8 @@ export async function createMob(formData: FormData) {
   }
   const { error } = await supabase.from('mobs').insert(payload)
   if (error) throw error
-  revalidatePath('/(admin)/mobs')
-  redirect('/(admin)/mobs')
+  revalidatePath('//mobs')
+  redirect('//mobs')
 }
 
 export async function updateMob(id: string, formData: FormData) {
@@ -66,12 +66,13 @@ export async function updateMob(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('mobs').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/mobs')
-  redirect('/(admin)/mobs')
+  revalidatePath('//mobs')
+  redirect('//mobs')
 }
 
 export async function deleteMob(id: string) {
   const { error } = await supabase.from('mobs').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/mobs')
+  revalidatePath('//mobs')
 }
+

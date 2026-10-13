@@ -25,8 +25,8 @@ export async function createWave(formData: FormData) {
   }
   const { error } = await supabase.from('waves').insert(payload)
   if (error) throw error
-  revalidatePath('/(admin)/waves')
-  redirect('/(admin)/waves')
+  revalidatePath('//waves')
+  redirect('//waves')
 }
 
 export async function updateWave(id: string, formData: FormData) {
@@ -38,14 +38,14 @@ export async function updateWave(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('waves').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/waves')
-  redirect('/(admin)/waves')
+  revalidatePath('//waves')
+  redirect('//waves')
 }
 
 export async function deleteWave(id: string) {
   const { error } = await supabase.from('waves').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/waves')
+  revalidatePath('//waves')
 }
 
 export async function addWaveMob(formData: FormData) {
@@ -59,11 +59,12 @@ export async function addWaveMob(formData: FormData) {
   }
   const { error } = await supabase.from('wave_mobs').insert(payload)
   if (error) throw error
-  revalidatePath('/(admin)/waves')
+  revalidatePath('//waves')
 }
 
 export async function deleteWaveMob(id: string) {
   const { error } = await supabase.from('wave_mobs').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/waves')
+  revalidatePath('//waves')
 }
+

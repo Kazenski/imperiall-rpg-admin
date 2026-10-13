@@ -32,8 +32,8 @@ export async function createStage(formData: FormData) {
   }
   const { error } = await supabase.from('stages').insert(payload)
   if (error) throw error
-  revalidatePath('/(admin)/stages')
-  redirect('/(admin)/stages')
+  revalidatePath('//stages')
+  redirect('//stages')
 }
 
 export async function updateStage(id: string, formData: FormData) {
@@ -52,12 +52,13 @@ export async function updateStage(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('stages').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/stages')
-  redirect('/(admin)/stages')
+  revalidatePath('//stages')
+  redirect('//stages')
 }
 
 export async function deleteStage(id: string) {
   const { error } = await supabase.from('stages').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/stages')
+  revalidatePath('//stages')
 }
+

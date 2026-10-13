@@ -33,8 +33,8 @@ export async function createSkill(formData: FormData) {
   }
   const { error } = await supabase.from('skills').insert(payload)
   if (error) throw error
-  revalidatePath('/(admin)/skills')
-  redirect('/(admin)/skills')
+  revalidatePath('//skills')
+  redirect('//skills')
 }
 
 export async function updateSkill(id: string, formData: FormData) {
@@ -60,12 +60,13 @@ export async function updateSkill(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('skills').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/skills')
-  redirect('/(admin)/skills')
+  revalidatePath('//skills')
+  redirect('//skills')
 }
 
 export async function deleteSkill(id: string) {
   const { error } = await supabase.from('skills').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/skills')
+  revalidatePath('//skills')
 }
+

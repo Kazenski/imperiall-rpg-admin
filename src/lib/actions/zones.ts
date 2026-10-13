@@ -23,8 +23,8 @@ export async function createZone(formData: FormData) {
   }
   const { error } = await supabase.from('zones').insert(payload)
   if (error) throw error
-  revalidatePath('/(admin)/stages')
-  redirect('/(admin)/stages')
+  revalidatePath('//stages')
+  redirect('//stages')
 }
 
 export async function updateZone(id: string, formData: FormData) {
@@ -40,12 +40,13 @@ export async function updateZone(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('zones').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/stages')
-  redirect('/(admin)/stages')
+  revalidatePath('//stages')
+  redirect('//stages')
 }
 
 export async function deleteZone(id: string) {
   const { error } = await supabase.from('zones').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/stages')
+  revalidatePath('//stages')
 }
+

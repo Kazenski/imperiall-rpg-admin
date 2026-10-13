@@ -32,8 +32,8 @@ export async function createItem(formData: FormData) {
 
   const { error } = await supabase.from('items').insert(payload)
   if (error) throw error
-  revalidatePath('/(admin)/items')
-  redirect('/(admin)/items')
+  revalidatePath('//items')
+  redirect('//items')
 }
 
 export async function updateItem(id: string, formData: FormData) {
@@ -58,12 +58,13 @@ export async function updateItem(id: string, formData: FormData) {
 
   const { error } = await supabase.from('items').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/items')
-  redirect('/(admin)/items')
+  revalidatePath('//items')
+  redirect('//items')
 }
 
 export async function deleteItem(id: string) {
   const { error } = await supabase.from('items').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/items')
+  revalidatePath('//items')
 }
+

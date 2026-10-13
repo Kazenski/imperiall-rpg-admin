@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { listItems, createItem, updateItem, deleteItem } from '@/lib/actions/items'
 import { useTransition } from 'react'
 import { Tooltip } from '@/components/ui/tooltip'
-import { Sword, Shield, Heart, Coins, Gem, Plus, Pencil, Trash2 } from 'lucide-react'
+import { ImageUpload } from '@/components/ui/image-upload'
+import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
+import { Sword, Shield, Heart, Coins, Gem, Plus, Pencil, Trash2, Eye } from 'lucide-react'
 
 const ITEM_TYPES: Record<string, string> = {
   weapon: 'Arma', helmet: 'Capacete', chest: 'Peitoral', gloves: 'Luvas',
@@ -36,6 +38,7 @@ export default function ItemsPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [isPending, startTransition] = useTransition()
+  const [viewing, setViewing] = useState<any>(null)
 
   const load = () => listItems().then(setItems)
   useEffect(() => { load() }, [])
@@ -155,14 +158,24 @@ export default function ItemsPage() {
               <label className="text-sm">Ordem de Exibição <Tooltip text="Menor número = aparece primeiro nas listas. Use para ordenar a loja" /></label>
               <input name="sort_order" type="number" value={form.sort_order} onChange={e => setForm({...form, sort_order: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
-            <div>
-              <label className="text-sm">URL do Ícone <Tooltip text="Imagem 64x64 ou 128x128 PNG com fundo transparente. Obtida após upload no Storage" /></label>
-              <input name="icon_url" value={form.icon_url} onChange={e => setForm({...form, icon_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
-            </div>
-            <div>
-              <label className="text-sm">URL do Sprite <Tooltip text="Imagem do item no inventário ou loja (opcional). PNG com transparência" /></label>
-              <input name="sprite_url" value={form.sprite_url} onChange={e => setForm({...form, sprite_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
-            </div>
+            <ImageUpload
+              label="Ícone do item"
+              fieldName="icon_url"
+              tooltipText="Imagem 64x64 ou 128x128 PNG com fundo transparente. Arraste o arquivo ou clique para enviar ao Storage."
+              folder="items"
+              value={form.icon_url}
+              onChange={(url) => setForm({ ...form, icon_url: url })}
+              hint="PNG transparente 128x128 — gerado na IA, fundo removido"
+            />
+            <ImageUpload
+              label="Sprite do item (opcional)"
+              fieldName="sprite_url"
+              tooltipText="Imagem do item no inventário ou loja. PNG com transparência. Pode ser a mesma do ícone."
+              folder="items"
+              value={form.sprite_url}
+              onChange={(url) => setForm({ ...form, sprite_url: url })}
+              hint="PNG transparente — opcional, pode repetir o ícone"
+            />
           </div>
           <div>
             <label className="text-sm">Descrição <Tooltip text="Texto exibido ao jogador passar o mouse no item" /></label>
@@ -183,7 +196,7 @@ export default function ItemsPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tipo</th><th className="p-2 text-left">Raridade</th>
+              <th className="p-2 text-left">Ícone</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tipo</th><th className="p-2 text-left">Raridade</th>
               <th className="p-2 text-left">ATK</th><th className="p-2 text-left">DEF</th><th className="p-2 text-left">HP</th>
               <th className="p-2 text-left">Preço</th><th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th>
             </tr>
@@ -191,13 +204,21 @@ export default function ItemsPage() {
           <tbody>
             {items.map(item => (
               <tr key={item.id} className="border-t">
-                <td className="p-2 font-medium">{item.name}</td>
+                <td className="p-2">
+                  {item.icon_url
+                    ? <img src={item.icon_url} alt={item.name} className="w-10 h-10 object-contain rounded border bg-muted" />
+                    : <span className="text-muted-foreground text-xs">—</span>}
+                </td>
+                <td className="p-2 font-medium">
+                  <button onClick={() => setViewing(item)} className="underline underline-offset-2 hover:text-primary text-left">{item.name}</button>
+                </td>
                 <td className="p-2">{ITEM_TYPES[item.type] || item.type}</td>
                 <td className="p-2"><span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: RARITIES[item.rarity]?.color + '20', color: RARITIES[item.rarity]?.color }}>{RARITIES[item.rarity]?.label || item.rarity}</span></td>
                 <td className="p-2">{item.stats?.atk || 0}</td><td className="p-2">{item.stats?.def || 0}</td><td className="p-2">{item.stats?.hp || 0}</td>
                 <td className="p-2">{item.price_gold > 0 ? `${item.price_gold} ouro` : ''} {item.price_gems > 0 ? `${item.price_gems} gemas` : ''}</td>
                 <td className="p-2">{item.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
+                  <button onClick={() => setViewing(item)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(item)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
                   <button onClick={() => handleDelete(item.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
@@ -206,6 +227,23 @@ export default function ItemsPage() {
           </tbody>
         </table>
       </div>
+
+      {viewing && (
+        <DetailModal title={viewing.name} onClose={() => setViewing(null)}>
+          <DetailImage label="Ícone" url={viewing.icon_url} />
+          <DetailImage label="Sprite" url={viewing.sprite_url} />
+          <DetailRow label="Slug" value={<code>{viewing.slug}</code>} />
+          <DetailRow label="Tipo" value={ITEM_TYPES[viewing.type] || viewing.type} />
+          <DetailRow label="Raridade" value={RARITIES[viewing.rarity]?.label || viewing.rarity} />
+          <DetailRow label="Slot" value={SLOTS[viewing.slot] || viewing.slot || '—'} />
+          <DetailRow label="ATK / DEF / HP" value={`${viewing.stats?.atk || 0} / ${viewing.stats?.def || 0} / ${viewing.stats?.hp || 0}`} />
+          <DetailRow label="Crítico" value={viewing.stats?.crit ? `${viewing.stats.crit}%` : '—'} />
+          <DetailRow label="Preço" value={`${viewing.price_gold || 0} ouro${viewing.price_gems ? ` + ${viewing.price_gems} gemas` : ''}`} />
+          <DetailRow label="Empilhável" value={viewing.stackable ? `Sim (máx ${viewing.max_stack})` : 'Não'} />
+          <DetailRow label="Descrição" value={viewing.description || '—'} />
+          <DetailRow label="Ativo" value={viewing.is_active ? 'Sim' : 'Não'} />
+        </DetailModal>
+      )}
     </div>
   )
 }

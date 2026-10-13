@@ -28,8 +28,8 @@ export async function createLootTable(formData: FormData) {
   }
   const { error } = await supabase.from('loot_tables').insert(payload)
   if (error) throw error
-  revalidatePath('/(admin)/loot-tables')
-  redirect('/(admin)/loot-tables')
+  revalidatePath('//loot-tables')
+  redirect('//loot-tables')
 }
 
 export async function updateLootTable(id: string, formData: FormData) {
@@ -44,14 +44,14 @@ export async function updateLootTable(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('loot_tables').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/loot-tables')
-  redirect('/(admin)/loot-tables')
+  revalidatePath('//loot-tables')
+  redirect('//loot-tables')
 }
 
 export async function deleteLootTable(id: string) {
   const { error } = await supabase.from('loot_tables').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/loot-tables')
+  revalidatePath('//loot-tables')
 }
 
 export async function addLootEntry(formData: FormData) {
@@ -68,11 +68,12 @@ export async function addLootEntry(formData: FormData) {
   }
   const { error } = await supabase.from('loot_table_entries').insert(payload)
   if (error) throw error
-  revalidatePath('/(admin)/loot-tables')
+  revalidatePath('//loot-tables')
 }
 
 export async function deleteLootEntry(id: string) {
   const { error } = await supabase.from('loot_table_entries').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('/(admin)/loot-tables')
+  revalidatePath('//loot-tables')
 }
+

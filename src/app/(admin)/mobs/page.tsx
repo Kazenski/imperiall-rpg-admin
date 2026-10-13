@@ -3,7 +3,9 @@
 import { useState, useEffect, useTransition } from 'react'
 import { listMobs, createMob, updateMob, deleteMob } from '@/lib/actions/mobs'
 import { Tooltip } from '@/components/ui/tooltip'
-import { Sword, Shield, Heart, Coins, Star, Plus, Pencil, Trash2, Zap } from 'lucide-react'
+import { ImageUpload } from '@/components/ui/image-upload'
+import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
+import { Sword, Shield, Heart, Coins, Star, Plus, Pencil, Trash2, Zap, Eye } from 'lucide-react'
 
 const TIERS: Record<string, { label: string; color: string }> = {
   normal: { label: 'Normal', color: '#9ca3af' },
@@ -26,6 +28,7 @@ export default function MobsPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [isPending, startTransition] = useTransition()
+  const [viewing, setViewing] = useState<any>(null)
 
   const load = () => listMobs().then(setMobs)
   useEffect(() => { load() }, [])
@@ -145,25 +148,15 @@ export default function MobsPage() {
               <label className="text-sm">Hitbox Altura <Tooltip text="Altura da área de colisão em pixels" /></label>
               <input name="hitbox_h" type="number" value={form.hitbox_h} onChange={e => setForm({...form, hitbox_h: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
-            <div>
-              <label className="text-sm">URL Sprite Idle <Tooltip text="Imagem parada (2-4 frames). PNG com fundo transparente, ex.: 64x64 ou 128x128" /></label>
-              <input name="sprite_idle_url" value={form.sprite_idle_url} onChange={e => setForm({...form, sprite_idle_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
-            </div>
-            <div>
-              <label className="text-sm">URL Sprite Run <Tooltip text="Animação de corrida (4-6 frames)" /></label>
-              <input name="sprite_run_url" value={form.sprite_run_url} onChange={e => setForm({...form, sprite_run_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
-            </div>
-            <div>
-              <label className="text-sm">URL Sprite Attack <Tooltip text="Animação de ataque (3-4 frames)" /></label>
-              <input name="sprite_attack_url" value={form.sprite_attack_url} onChange={e => setForm({...form, sprite_attack_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
-            </div>
-            <div>
-              <label className="text-sm">URL Sprite Hit <Tooltip text="Animação ao tomar dano (1-2 frames)" /></label>
-              <input name="sprite_hit_url" value={form.sprite_hit_url} onChange={e => setForm({...form, sprite_hit_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
-            </div>
-            <div>
-              <label className="text-sm">URL Sprite Death <Tooltip text="Animação de morte (2-3 frames)" /></label>
-              <input name="sprite_death_url" value={form.sprite_death_url} onChange={e => setForm({...form, sprite_death_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
+            <div className="col-span-3 border-t pt-3 mt-1">
+              <p className="text-sm font-semibold mb-2">Sprites de animação — arraste a imagem estática com fundo transparente. Pré-visualização aparece antes de salvar.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <ImageUpload label="Sprite Parado (Idle)" fieldName="sprite_idle_url" tooltipText="Pose parada do inimigo (2-4 frames no jogo final). Por agora suba 1 imagem estática PNG transparente." folder="mobs" value={form.sprite_idle_url} onChange={(url) => setForm({ ...form, sprite_idle_url: url })} hint="PNG transparente 128x128 ou 256x256" />
+                <ImageUpload label="Sprite Correndo (Run)" fieldName="sprite_run_url" tooltipText="Animação de movimento (4-6 frames no jogo final). Por agora suba 1 imagem estática." folder="mobs" value={form.sprite_run_url} onChange={(url) => setForm({ ...form, sprite_run_url: url })} hint="PNG transparente 128x128 ou 256x256" />
+                <ImageUpload label="Sprite Atacando (Attack)" fieldName="sprite_attack_url" tooltipText="Animação de ataque (3-4 frames no jogo final). Por agora suba 1 imagem estática." folder="mobs" value={form.sprite_attack_url} onChange={(url) => setForm({ ...form, sprite_attack_url: url })} hint="PNG transparente 128x128 ou 256x256" />
+                <ImageUpload label="Sprite Atingido (Hit)" fieldName="sprite_hit_url" tooltipText="Animação ao tomar dano (1-2 frames). Por agora suba 1 imagem estática." folder="mobs" value={form.sprite_hit_url} onChange={(url) => setForm({ ...form, sprite_hit_url: url })} hint="PNG transparente 128x128 ou 256x256" />
+                <ImageUpload label="Sprite Morte (Death)" fieldName="sprite_death_url" tooltipText="Animação de morte (2-3 frames). Por agora suba 1 imagem estática." folder="mobs" value={form.sprite_death_url} onChange={(url) => setForm({ ...form, sprite_death_url: url })} hint="PNG transparente 128x128 ou 256x256" />
+              </div>
             </div>
           </div>
           <div>
@@ -182,7 +175,7 @@ export default function MobsPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tier</th><th className="p-2 text-left">HP</th>
+              <th className="p-2 text-left">Sprite</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tier</th><th className="p-2 text-left">HP</th>
               <th className="p-2 text-left">ATK</th><th className="p-2 text-left">DEF</th><th className="p-2 text-left">EXP</th>
               <th className="p-2 text-left">Ouro</th><th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th>
             </tr>
@@ -190,12 +183,20 @@ export default function MobsPage() {
           <tbody>
             {mobs.map(mob => (
               <tr key={mob.id} className="border-t">
-                <td className="p-2 font-medium">{mob.name}</td>
+                <td className="p-2">
+                  {mob.sprite_idle_url
+                    ? <img src={mob.sprite_idle_url} alt={mob.name} className="w-10 h-10 object-contain rounded border bg-muted" />
+                    : <span className="text-muted-foreground text-xs">—</span>}
+                </td>
+                <td className="p-2 font-medium">
+                  <button onClick={() => setViewing(mob)} className="underline underline-offset-2 hover:text-primary text-left">{mob.name}</button>
+                </td>
                 <td className="p-2"><span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: TIERS[mob.tier]?.color + '20', color: TIERS[mob.tier]?.color }}>{TIERS[mob.tier]?.label || mob.tier}</span></td>
                 <td className="p-2">{mob.hp}</td><td className="p-2">{mob.atk}</td><td className="p-2">{mob.def}</td>
                 <td className="p-2">{mob.exp_reward}</td><td className="p-2">{mob.gold_reward}</td>
                 <td className="p-2">{mob.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
+                  <button onClick={() => setViewing(mob)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(mob)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
                   <button onClick={() => handleDelete(mob.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
@@ -204,6 +205,22 @@ export default function MobsPage() {
           </tbody>
         </table>
       </div>
+
+      {viewing && (
+        <DetailModal title={viewing.name} onClose={() => setViewing(null)}>
+          <DetailImage label="Parado (Idle)" url={viewing.sprite_idle_url} />
+          <DetailImage label="Correndo (Run)" url={viewing.sprite_run_url} />
+          <DetailImage label="Atacando (Attack)" url={viewing.sprite_attack_url} />
+          <DetailImage label="Atingido (Hit)" url={viewing.sprite_hit_url} />
+          <DetailImage label="Morte (Death)" url={viewing.sprite_death_url} />
+          <DetailRow label="Slug" value={<code>{viewing.slug}</code>} />
+          <DetailRow label="Tier" value={TIERS[viewing.tier]?.label || viewing.tier} />
+          <DetailRow label="HP / ATK / DEF" value={`${viewing.hp} / ${viewing.atk} / ${viewing.def}`} />
+          <DetailRow label="EXP / Ouro" value={`${viewing.exp_reward} / ${viewing.gold_reward}`} />
+          <DetailRow label="Descrição" value={viewing.description || '—'} />
+          <DetailRow label="Ativo" value={viewing.is_active ? 'Sim' : 'Não'} />
+        </DetailModal>
+      )}
     </div>
   )
 }

@@ -3,7 +3,9 @@
 import { useState, useEffect, useTransition } from 'react'
 import { listSkills, createSkill, updateSkill, deleteSkill } from '@/lib/actions/skills'
 import { Tooltip } from '@/components/ui/tooltip'
-import { Zap, Plus, Pencil, Trash2 } from 'lucide-react'
+import { Zap, Plus, Pencil, Trash2, Eye } from 'lucide-react'
+import { ImageUpload } from '@/components/ui/image-upload'
+import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
 
 const SKILL_TYPES: Record<string, string> = { active: 'Ativa', passive: 'Passiva' }
 const TARGETS: Record<string, string> = {
@@ -23,6 +25,7 @@ export default function SkillsPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [isPending, startTransition] = useTransition()
+  const [viewing, setViewing] = useState<any>(null)
 
   const load = () => listSkills().then(setSkills)
   useEffect(() => { load() }, [])
@@ -107,10 +110,15 @@ export default function SkillsPage() {
               <label className="text-sm">Ordem de Exibição</label>
               <input name="sort_order" type="number" value={form.sort_order} onChange={e => setForm({...form, sort_order: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
-            <div>
-              <label className="text-sm">URL do Ícone <Tooltip text="Ícone da skill na UI (64x64 ou 128x128 PNG)" /></label>
-              <input name="icon_url" value={form.icon_url} onChange={e => setForm({...form, icon_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
-            </div>
+            <ImageUpload
+              label="Ícone da skill"
+              fieldName="icon_url"
+              tooltipText="Ícone 64x64 ou 128x128 PNG transparente. Arraste ou clique para enviar."
+              folder="skills"
+              value={form.icon_url}
+              onChange={(url) => setForm({ ...form, icon_url: url })}
+              hint="PNG transparente 128x128 — gerado na IA"
+            />
           </div>
           <div>
             <label className="text-sm">Descrição <Tooltip text="Texto exibido ao jogador. Ex.: 'Causa 150 de dano e atordoa o inimigo por 1s'" /></label>
@@ -132,7 +140,7 @@ export default function SkillsPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tipo</th><th className="p-2 text-left">Alvo</th>
+              <th className="p-2 text-left">Ícone</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tipo</th><th className="p-2 text-left">Alvo</th>
               <th className="p-2 text-left">Recarga</th><th className="p-2 text-left">Mana</th><th className="p-2 text-left">Dano</th>
               <th className="p-2 text-left">Ativa</th><th className="p-2 text-left">Ações</th>
             </tr>
@@ -140,12 +148,20 @@ export default function SkillsPage() {
           <tbody>
             {skills.map(skill => (
               <tr key={skill.id} className="border-t">
-                <td className="p-2 font-medium">{skill.name}</td>
+                <td className="p-2">
+                  {skill.icon_url
+                    ? <img src={skill.icon_url} alt={skill.name} className="w-10 h-10 object-contain rounded border bg-muted" />
+                    : <span className="text-muted-foreground text-xs">—</span>}
+                </td>
+                <td className="p-2 font-medium">
+                  <button onClick={() => setViewing(skill)} className="underline underline-offset-2 hover:text-primary text-left">{skill.name}</button>
+                </td>
                 <td className="p-2">{SKILL_TYPES[skill.type] || skill.type}</td>
                 <td className="p-2">{TARGETS[skill.target] || skill.target}</td>
                 <td className="p-2">{skill.cooldown_ms}ms</td><td className="p-2">{skill.mana_cost}</td><td className="p-2">{skill.base_damage}</td>
                 <td className="p-2">{skill.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
+                  <button onClick={() => setViewing(skill)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
                   <button onClick={() => handleEdit(skill)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
                   <button onClick={() => handleDelete(skill.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
@@ -154,6 +170,19 @@ export default function SkillsPage() {
           </tbody>
         </table>
       </div>
+
+      {viewing && (
+        <DetailModal title={viewing.name} onClose={() => setViewing(null)}>
+          <DetailImage label="Ícone" url={viewing.icon_url} />
+          <DetailRow label="Slug" value={<code>{viewing.slug}</code>} />
+          <DetailRow label="Tipo / Alvo" value={`${SKILL_TYPES[viewing.type] || viewing.type} / ${TARGETS[viewing.target] || viewing.target}`} />
+          <DetailRow label="Recarga / Mana / Dano" value={`${viewing.cooldown_ms}ms / ${viewing.mana_cost} / ${viewing.base_damage}`} />
+          <DetailRow label="Animação" value={<code>{viewing.animation_key || '—'}</code>} />
+          <DetailRow label="Efeitos" value={<code className="text-xs">{JSON.stringify(viewing.effects || {})}</code>} />
+          <DetailRow label="Descrição" value={viewing.description || '—'} />
+          <DetailRow label="Ativa" value={viewing.is_active ? 'Sim' : 'Não'} />
+        </DetailModal>
+      )}
     </div>
   )
 }
