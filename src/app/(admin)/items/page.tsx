@@ -1,8 +1,10 @@
-﻿export default function ItemsPage() {
+﻿'use client'
+
+export default function ItemsListPage() {
   return (
     <div>
-      <h2 className="text-2xl font-semibold mb-4">Itens</h2>
-      <p className="text-muted-foreground">CRUD de itens (weapon/armor/consumable/material) • em breve</p>
+      <h2 className="text-2xl font-semibold mb-4">Items</h2>
+      <p className="text-muted-foreground">Lista + criar/editar em breve.</p>
     </div>
   )
 }
