@@ -10,6 +10,7 @@ export default function SincronizarPage() {
   const [setupError, setSetupError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [result, setResult] = useState<string | null>(null)
+  const [confirmed, setConfirmed] = useState(false)
   const [diag, setDiag] = useState<{ side: string; host: string; ok: boolean; detail: string }[] | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -62,8 +63,9 @@ export default function SincronizarPage() {
       const r = await syncPromoteAction(tables)
       if (r.ok) {
         const total = r.data.reduce((s, d) => s + d.rows, 0)
-        setResult(`Promovido: ${total} linha(s) em ${r.data.length} tabela(s). Confira no oficial.`)
+        setResult(`Publicado: ${total} linha(s) em ${r.data.length} tabela(s). Confira no oficial.`)
         setSelected(new Set())
+        setConfirmed(false)
         load()
       } else setResult('Falha: ' + r.error)
     })
@@ -98,12 +100,39 @@ export default function SincronizarPage() {
 
       {diff && (
         <>
-          <div className="border rounded p-4 flex flex-wrap gap-3 items-center">
+          {/* PASSO 1 — preparar o teste */}
+          <div className="border rounded p-4 space-y-2">
+            <h3 className="font-semibold">Passo 1 — Preparar o teste</h3>
+            <p className="text-sm text-muted-foreground">
+              Apaga <strong>todo o catálogo do banco de teste</strong> e copia o oficial.
+              Faça isso antes de testar algo novo, para validar contra os dados reais.
+              Não mexe no oficial.
+            </p>
             <button onClick={handleRefresh} disabled={isPending} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2 disabled:opacity-50">
               <RefreshCw size={16} /> {isPending ? 'Copiando...' : 'Atualizar teste ← oficial (tudo)'}
             </button>
-            <button onClick={handlePromote} disabled={isPending || selected.size === 0} className="px-4 py-2 border border-red-500 text-red-600 rounded inline-flex items-center gap-2 disabled:opacity-50">
-              <UploadCloud size={16} /> Promover selecionadas → oficial ({selected.size})
+          </div>
+
+          {/* PASSO 2 — publicar */}
+          <div className="border border-red-500/50 rounded p-4 space-y-3">
+            <h3 className="font-semibold">Passo 2 — Publicar no oficial</h3>
+            <p className="text-sm text-muted-foreground">
+              Envia as tabelas marcadas abaixo <strong>do teste para o oficial</strong>.
+              Só marque o que já foi <strong>testado e está pronto para o público</strong>:
+              o que está no teste e aprovado vai ao ar; o resto continua só no teste.
+            </p>
+            <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+              <li>Atualiza pelo id: cria o que é novo, sobrescreve o que mudou.</li>
+              <li><strong>Exclusões não viajam</strong>: o que você apagou no teste continua no oficial (apague lá direto, se for o caso).</li>
+              <li>Perfis, punições e progresso de jogadores nunca viajam.</li>
+              <li>Não tem desfazer automático: confira o diff antes.</li>
+            </ul>
+            <label className="flex items-start gap-2 text-sm border rounded p-2">
+              <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-1" />
+              <span>Testei no banco de teste e quero publicar as tabelas marcadas. Entendo que entra no ar na hora.</span>
+            </label>
+            <button onClick={handlePromote} disabled={isPending || selected.size === 0 || !confirmed} className="px-4 py-2 border border-red-500 text-red-600 rounded inline-flex items-center gap-2 disabled:opacity-50">
+              <UploadCloud size={16} /> Publicar marcadas → oficial ({selected.size})
             </button>
           </div>
 
@@ -137,8 +166,7 @@ export default function SincronizarPage() {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Promover faz upsert pelo id (cria ou atualiza). Exclusões feitas no teste não apagam no oficial — delete lá direto se precisar.
-            Perfis, punições e progresso de jogadores nunca viajam. Imagens seguem no bucket oficial.
+            Marque abaixo as tabelas do <strong>Passo 2</strong>. Imagens seguem no bucket oficial.
           </p>
         </>
       )}
