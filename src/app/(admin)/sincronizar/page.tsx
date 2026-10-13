@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useTransition } from 'react'
-import { syncDiffAction, syncRefreshAction, syncPromoteAction } from '@/lib/actions/sync'
+import { syncDiffAction, syncRefreshAction, syncPromoteAction, syncDiagnoseAction } from '@/lib/actions/sync'
 import { TABLE_LABELS } from '@/lib/sync'
 import { RefreshCw, UploadCloud, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
@@ -10,6 +10,7 @@ export default function SincronizarPage() {
   const [setupError, setSetupError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [result, setResult] = useState<string | null>(null)
+  const [diag, setDiag] = useState<{ side: string; host: string; ok: boolean; detail: string }[] | null>(null)
   const [isPending, startTransition] = useTransition()
 
   const load = () => {
@@ -20,6 +21,15 @@ export default function SincronizarPage() {
     })
   }
   useEffect(() => { load() }, [])
+
+  const handleDiagnose = () => {
+    setDiag(null)
+    startTransition(async () => {
+      const r = await syncDiagnoseAction()
+      if (r.ok) setDiag(r.data)
+      else setResult('Falha no diagnóstico: ' + r.error)
+    })
+  }
 
   const toggle = (t: string) => {
     setSelected((prev) => {
@@ -70,6 +80,18 @@ export default function SincronizarPage() {
         <div className="border border-amber-500 rounded p-4 text-sm space-y-2">
           <p className="font-semibold flex items-center gap-2"><AlertTriangle size={16} /> Sincronia indisponível aqui</p>
           <p className="text-muted-foreground">{setupError}</p>
+          <button onClick={handleDiagnose} disabled={isPending} className="px-3 py-1.5 border rounded text-sm disabled:opacity-50">
+            {isPending ? 'Testando...' : 'Diagnosticar conexão'}
+          </button>
+          {diag && (
+            <div className="space-y-1 font-mono text-xs">
+              {diag.map((d) => (
+                <p key={d.side} className={d.ok ? 'text-green-600' : 'text-red-600'}>
+                  [{d.side}] {d.host} → {d.detail}
+                </p>
+              ))}
+            </div>
+          )}
           <p className="text-muted-foreground">Esta página só funciona no deploy de <strong>produção</strong>, com as 4 variáveis de serviço cadastradas na Vercel (sem prefixo NEXT_PUBLIC_): SUPABASE_PROD_URL, SUPABASE_PROD_SERVICE_KEY, SUPABASE_STAGING_URL, SUPABASE_STAGING_SERVICE_KEY. Depois, redeploy.</p>
         </div>
       )}

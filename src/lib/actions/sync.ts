@@ -1,7 +1,15 @@
 'use server'
 
-import { diffCounts, refreshStaging, promoteTables } from '@/lib/sync';
+import { diffCounts, refreshStaging, promoteTables, diagnose } from '@/lib/sync';
 import { revalidatePath } from 'next/cache';
+
+export async function syncDiagnoseAction() {
+  try {
+    return { ok: true as const, data: await diagnose() };
+  } catch (e: any) {
+    return { ok: false as const, error: e?.message || String(e) };
+  }
+}
 
 export async function syncDiffAction() {
   try {

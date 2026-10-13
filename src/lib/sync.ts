@@ -113,7 +113,47 @@ export async function promoteTables(tables: string[]): Promise<{ table: string; 
   return out;
 }
 
-/** Contagem por tabela nos dois bancos (para a tela de diff). */
+/** Diagnóstico bruto: tenta alcançar cada banco e relata status/corpo.
+ * Não expõe chaves — mostra só o host e o retorno. */
+export async function diagnose(): Promise<
+  { side: string; host: string; ok: boolean; detail: string }[]
+> {
+  const out: { side: string; host: string; ok: boolean; detail: string }[] = [];
+  const targets = [
+    { side: 'oficial', url: process.env.SUPABASE_PROD_URL, key: process.env.SUPABASE_PROD_SERVICE_KEY },
+    { side: 'teste', url: process.env.SUPABASE_STAGING_URL, key: process.env.SUPABASE_STAGING_SERVICE_KEY },
+  ];
+  for (const t of targets) {
+    if (!t.url || !t.key) {
+      out.push({ side: t.side, host: '(não configurado)', ok: false, detail: 'variável ausente' });
+      continue;
+    }
+    const cleanUrl = t.url.trim().replace(/\/+$/, '');
+    let host = '(url inválida)';
+    try {
+      host = new URL(cleanUrl).host;
+    } catch {
+      out.push({ side: t.side, host, ok: false, detail: `URL malformada: "${t.url.trim().slice(0, 60)}"` });
+      continue;
+    }
+    try {
+      const r = await fetch(`${cleanUrl}/rest/v1/items?select=id&limit=1`, {
+        headers: { apikey: t.key.trim(), Authorization: `Bearer ${t.key.trim()}` },
+      });
+      const body = (await r.text()).slice(0, 200);
+      out.push({
+        side: t.side,
+        host,
+        ok: r.ok,
+        detail: r.ok ? `HTTP ${r.status} OK — resposta: ${body.slice(0, 80)}` : `HTTP ${r.status} — resposta: ${body}`,
+      });
+    } catch (e: any) {
+      const cause = e?.cause ? ` (causa: ${JSON.stringify(e.cause).slice(0, 120)})` : '';
+      out.push({ side: t.side, host, ok: false, detail: `falha de rede: ${e?.message || e}${cause}` });
+    }
+  }
+  return out;
+}
 export async function diffCounts(): Promise<{ table: string; prod: number; staging: number }[]> {
   const { prod, stag } = getSyncClients();
   const out: { table: string; prod: number; staging: number }[] = [];
