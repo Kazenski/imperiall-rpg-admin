@@ -88,6 +88,26 @@ Criado uma vez, no dashboard do Supabase:
      (e **Development**, se rodar local contra o teste).
 4. **Redeploy** a `staging` para valer as novas vars.
 
+## Sincronizar staging com a produção (refresh)
+
+O staging nasce vazio — para testar conteúdo novo (ex.: um herói) contra os
+dados reais, clone o catálogo oficial para o teste:
+
+```powershell
+$env:PROD_URL="https://agdukzabyyxzrjadjybf.supabase.co"
+$env:PROD_KEY="<anon-key-oficial>"
+$env:STAGING_URL="https://jamhpibptsasvftqetdm.supabase.co"
+$env:STAGING_KEY="<anon-key-teste>"
+node scripts/refresh-staging.cjs
+```
+
+O script (`scripts/refresh-staging.cjs`) apaga o catálogo do staging e copia
+tudo do oficial **com os mesmos ids** (vínculos preservados). Não copia
+perfis, punições nem progresso de jogadores. Imagens continuam apontando
+para o bucket oficial (URLs públicas).
+
+Quando fazer: antes de testar balanceamento, herói novo ou evento.
+
 ## Comandos úteis
 
 ```bash
