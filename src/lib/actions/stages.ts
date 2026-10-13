@@ -2,7 +2,6 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 
 export async function listZones() {
   const { data, error } = await supabase.from('zones').select('*').order('sort_order', { ascending: true })
@@ -32,8 +31,7 @@ export async function createStage(formData: FormData) {
   }
   const { error } = await supabase.from('stages').insert(payload)
   if (error) throw error
-  revalidatePath('//stages')
-  redirect('//stages')
+  revalidatePath('/stages')
 }
 
 export async function updateStage(id: string, formData: FormData) {
@@ -52,13 +50,12 @@ export async function updateStage(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('stages').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('//stages')
-  redirect('//stages')
+  revalidatePath('/stages')
 }
 
 export async function deleteStage(id: string) {
   const { error } = await supabase.from('stages').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('//stages')
+  revalidatePath('/stages')
 }
 

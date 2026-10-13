@@ -50,7 +50,7 @@ export default function StagesPage() {
       const fd = new FormData(e.target as HTMLFormElement)
       if (editing) await updateStage(editing.id, fd)
       else await createStage(fd)
-      setShowForm(false); setEditing(null); setForm(emptyStage)
+      setShowForm(false); setEditing(null); setForm(emptyStage); load()
     })
   }
 
@@ -73,7 +73,7 @@ export default function StagesPage() {
       const fd = new FormData(e.target as HTMLFormElement)
       if (zoneEditing) await updateZone(zoneEditing.id, fd)
       else await createZone(fd)
-      setShowZoneForm(false); setZoneEditing(null); setZoneForm(emptyZone)
+      setShowZoneForm(false); setZoneEditing(null); setZoneForm(emptyZone); load()
     })
   }
 

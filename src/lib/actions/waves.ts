@@ -2,7 +2,6 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 
 export async function listWaves() {
   const { data, error } = await supabase.from('waves').select('*, stages(name)').order('stage_id')
@@ -25,8 +24,7 @@ export async function createWave(formData: FormData) {
   }
   const { error } = await supabase.from('waves').insert(payload)
   if (error) throw error
-  revalidatePath('//waves')
-  redirect('//waves')
+  revalidatePath('/waves')
 }
 
 export async function updateWave(id: string, formData: FormData) {
@@ -38,14 +36,13 @@ export async function updateWave(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('waves').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('//waves')
-  redirect('//waves')
+  revalidatePath('/waves')
 }
 
 export async function deleteWave(id: string) {
   const { error } = await supabase.from('waves').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('//waves')
+  revalidatePath('/waves')
 }
 
 export async function addWaveMob(formData: FormData) {
@@ -59,12 +56,12 @@ export async function addWaveMob(formData: FormData) {
   }
   const { error } = await supabase.from('wave_mobs').insert(payload)
   if (error) throw error
-  revalidatePath('//waves')
+  revalidatePath('/waves')
 }
 
 export async function deleteWaveMob(id: string) {
   const { error } = await supabase.from('wave_mobs').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('//waves')
+  revalidatePath('/waves')
 }
 

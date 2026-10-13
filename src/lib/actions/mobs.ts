@@ -2,7 +2,6 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 
 export async function listMobs() {
   const { data, error } = await supabase.from('mobs').select('*').order('created_at', { ascending: false })
@@ -36,8 +35,7 @@ export async function createMob(formData: FormData) {
   }
   const { error } = await supabase.from('mobs').insert(payload)
   if (error) throw error
-  revalidatePath('//mobs')
-  redirect('//mobs')
+  revalidatePath('/mobs')
 }
 
 export async function updateMob(id: string, formData: FormData) {
@@ -66,13 +64,12 @@ export async function updateMob(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('mobs').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('//mobs')
-  redirect('//mobs')
+  revalidatePath('/mobs')
 }
 
 export async function deleteMob(id: string) {
   const { error } = await supabase.from('mobs').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('//mobs')
+  revalidatePath('/mobs')
 }
 

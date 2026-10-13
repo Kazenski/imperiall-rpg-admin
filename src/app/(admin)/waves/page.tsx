@@ -43,7 +43,7 @@ export default function WavesPage() {
       const fd = new FormData(e.target as HTMLFormElement)
       if (editing) await updateWave(editing.id, fd)
       else await createWave(fd)
-      setShowForm(false); setEditing(null); setForm(emptyWave)
+      setShowForm(false); setEditing(null); setForm(emptyWave); load()
     })
   }
 
@@ -62,7 +62,7 @@ export default function WavesPage() {
     startTransition(async () => {
       const fd = new FormData(e.target as HTMLFormElement)
       await addWaveMob(fd)
-      setShowMobForm(false); setMobForm(emptyWaveMob)
+      setShowMobForm(false); setMobForm(emptyWaveMob); load()
     })
   }
 

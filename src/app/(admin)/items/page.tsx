@@ -63,7 +63,7 @@ export default function ItemsPage() {
       const fd = new FormData(e.target as HTMLFormElement)
       if (editing) await updateItem(editing.id, fd)
       else await createItem(fd)
-      setShowForm(false); setEditing(null); setForm(emptyForm)
+      setShowForm(false); setEditing(null); setForm(emptyForm); load()
     })
   }
 

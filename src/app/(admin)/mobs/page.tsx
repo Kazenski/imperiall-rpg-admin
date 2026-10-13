@@ -53,7 +53,7 @@ export default function MobsPage() {
       const fd = new FormData(e.target as HTMLFormElement)
       if (editing) await updateMob(editing.id, fd)
       else await createMob(fd)
-      setShowForm(false); setEditing(null); setForm(emptyForm)
+      setShowForm(false); setEditing(null); setForm(emptyForm); load()
     })
   }
 

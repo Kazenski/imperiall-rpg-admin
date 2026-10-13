@@ -47,7 +47,7 @@ export default function SkillsPage() {
       const fd = new FormData(e.target as HTMLFormElement)
       if (editing) await updateSkill(editing.id, fd)
       else await createSkill(fd)
-      setShowForm(false); setEditing(null); setForm(emptyForm)
+      setShowForm(false); setEditing(null); setForm(emptyForm); load()
     })
   }
 

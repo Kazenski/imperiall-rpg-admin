@@ -48,7 +48,7 @@ export default function LootTablesPage() {
       const fd = new FormData(e.target as HTMLFormElement)
       if (editing) await updateLootTable(editing.id, fd)
       else await createLootTable(fd)
-      setShowForm(false); setEditing(null); setForm(emptyTable)
+      setShowForm(false); setEditing(null); setForm(emptyTable); load()
     })
   }
 
@@ -67,7 +67,7 @@ export default function LootTablesPage() {
     startTransition(async () => {
       const fd = new FormData(e.target as HTMLFormElement)
       await addLootEntry(fd)
-      setShowEntryForm(false); setEntryForm(emptyEntry)
+      setShowEntryForm(false); setEntryForm(emptyEntry); load()
     })
   }
 

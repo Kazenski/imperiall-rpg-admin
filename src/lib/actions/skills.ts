@@ -2,7 +2,6 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 
 export async function listSkills() {
   const { data, error } = await supabase.from('skills').select('*').order('sort_order', { ascending: true })
@@ -33,8 +32,7 @@ export async function createSkill(formData: FormData) {
   }
   const { error } = await supabase.from('skills').insert(payload)
   if (error) throw error
-  revalidatePath('//skills')
-  redirect('//skills')
+  revalidatePath('/skills')
 }
 
 export async function updateSkill(id: string, formData: FormData) {
@@ -60,13 +58,12 @@ export async function updateSkill(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('skills').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('//skills')
-  redirect('//skills')
+  revalidatePath('/skills')
 }
 
 export async function deleteSkill(id: string) {
   const { error } = await supabase.from('skills').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('//skills')
+  revalidatePath('/skills')
 }
 

@@ -2,7 +2,6 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 
 export async function listItems() {
   const { data, error } = await supabase.from('items').select('*').order('sort_order', { ascending: true })
@@ -32,8 +31,7 @@ export async function createItem(formData: FormData) {
 
   const { error } = await supabase.from('items').insert(payload)
   if (error) throw error
-  revalidatePath('//items')
-  redirect('//items')
+  revalidatePath('/items')
 }
 
 export async function updateItem(id: string, formData: FormData) {
@@ -58,13 +56,12 @@ export async function updateItem(id: string, formData: FormData) {
 
   const { error } = await supabase.from('items').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('//items')
-  redirect('//items')
+  revalidatePath('/items')
 }
 
 export async function deleteItem(id: string) {
   const { error } = await supabase.from('items').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('//items')
+  revalidatePath('/items')
 }
 

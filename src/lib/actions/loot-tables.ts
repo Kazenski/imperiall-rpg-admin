@@ -2,7 +2,6 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 
 export async function listLootTables() {
   const { data, error } = await supabase.from('loot_tables').select('*, mobs(name), stages(name)').order('created_at', { ascending: false })
@@ -28,8 +27,7 @@ export async function createLootTable(formData: FormData) {
   }
   const { error } = await supabase.from('loot_tables').insert(payload)
   if (error) throw error
-  revalidatePath('//loot-tables')
-  redirect('//loot-tables')
+  revalidatePath('/loot-tables')
 }
 
 export async function updateLootTable(id: string, formData: FormData) {
@@ -44,14 +42,13 @@ export async function updateLootTable(id: string, formData: FormData) {
   }
   const { error } = await supabase.from('loot_tables').update(payload).eq('id', id)
   if (error) throw error
-  revalidatePath('//loot-tables')
-  redirect('//loot-tables')
+  revalidatePath('/loot-tables')
 }
 
 export async function deleteLootTable(id: string) {
   const { error } = await supabase.from('loot_tables').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('//loot-tables')
+  revalidatePath('/loot-tables')
 }
 
 export async function addLootEntry(formData: FormData) {
@@ -68,12 +65,12 @@ export async function addLootEntry(formData: FormData) {
   }
   const { error } = await supabase.from('loot_table_entries').insert(payload)
   if (error) throw error
-  revalidatePath('//loot-tables')
+  revalidatePath('/loot-tables')
 }
 
 export async function deleteLootEntry(id: string) {
   const { error } = await supabase.from('loot_table_entries').delete().eq('id', id)
   if (error) throw error
-  revalidatePath('//loot-tables')
+  revalidatePath('/loot-tables')
 }
 
