@@ -2,12 +2,12 @@
 
 export default function AdminNav() {
   const links = [
-    { href: '/(admin)/items', label: 'Items' },
-    { href: '/(admin)/mobs', label: 'Mobs' },
-    { href: '/(admin)/skills', label: 'Skills' },
-    { href: '/(admin)/stages', label: 'Stages' },
-    { href: '/(admin)/waves', label: 'Waves' },
-    { href: '/(admin)/loot-tables', label: 'Loot Tables' },
+    { href: '/items', label: 'Items' },
+    { href: '/mobs', label: 'Mobs' },
+    { href: '/skills', label: 'Skills' },
+    { href: '/stages', label: 'Stages' },
+    { href: '/waves', label: 'Waves' },
+    { href: '/loot-tables', label: 'Loot Tables' },
   ]
   return (
     <nav className="flex gap-3 text-sm">
