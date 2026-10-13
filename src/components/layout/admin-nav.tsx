@@ -2,12 +2,13 @@
 
 export default function AdminNav() {
   const links = [
-    { href: '/items', label: 'Items' },
-    { href: '/mobs', label: 'Mobs' },
-    { href: '/skills', label: 'Skills' },
-    { href: '/stages', label: 'Stages' },
-    { href: '/waves', label: 'Waves' },
-    { href: '/loot-tables', label: 'Loot Tables' },
+    { href: '/items', label: 'Itens' },
+    { href: '/mobs', label: 'Inimigos' },
+    { href: '/skills', label: 'Habilidades' },
+    { href: '/stages', label: 'Fases' },
+    { href: '/waves', label: 'Ondas' },
+    { href: '/loot-tables', label: 'Loot' },
+    { href: '/guia', label: 'Guia' },
   ]
   return (
     <nav className="flex gap-3 text-sm">

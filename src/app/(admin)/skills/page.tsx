@@ -3,8 +3,15 @@
 import { useState, useEffect, useTransition } from 'react'
 import { listSkills, createSkill, updateSkill, deleteSkill } from '@/lib/actions/skills'
 
-const SKILL_TYPES = ['active','passive']
-const TARGETS = ['self','enemy','enemies','ally','allies','aoe']
+const SKILL_TYPES: Record<string, string> = { active: 'Ativa', passive: 'Passiva' }
+const TARGETS: Record<string, string> = {
+  self: 'Próprio jogador', enemy: 'Um inimigo', enemies: 'Todos os inimigos',
+  ally: 'Um aliado', allies: 'Todos os aliados', aoe: 'Área (ao redor)',
+}
+
+function Tip({ text }: { text: string }) {
+  return <span className="ml-1 cursor-help text-muted-foreground" title={text}>?</span>
+}
 
 const emptyForm = {
   slug: '', name: '', description: '', type: 'active', target: 'enemy',
@@ -44,33 +51,76 @@ export default function SkillsPage() {
   }
 
   const handleDelete = (id: string) => {
-    if (confirm('Excluir esta skill?')) startTransition(() => deleteSkill(id).then(load))
+    if (confirm('Excluir esta habilidade?')) startTransition(() => deleteSkill(id).then(load))
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">Skills</h2>
-        <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded">+ Novo</button>
+        <div>
+          <h2 className="text-2xl font-semibold">Habilidades</h2>
+          <p className="text-sm text-muted-foreground">Cadastre skills ativas e passivas do jogador e dos inimigos</p>
+        </div>
+        <button onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded">+ Nova Skill</button>
       </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="border rounded p-4 mb-4 space-y-3">
           <div className="grid grid-cols-3 gap-3">
-            <div><label className="text-sm">Slug</label><input name="slug" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} className="w-full border rounded px-2 py-1" required /></div>
-            <div><label className="text-sm">Nome</label><input name="name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full border rounded px-2 py-1" required /></div>
-            <div><label className="text-sm">Tipo</label><select name="type" value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="w-full border rounded px-2 py-1">{SKILL_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
-            <div><label className="text-sm">Target</label><select name="target" value={form.target} onChange={e => setForm({...form, target: e.target.value})} className="w-full border rounded px-2 py-1">{TARGETS.map(t => <option key={t}>{t}</option>)}</select></div>
-            <div><label className="text-sm">Cooldown (ms)</label><input name="cooldown_ms" type="number" value={form.cooldown_ms} onChange={e => setForm({...form, cooldown_ms: Number(e.target.value)})} className="w-full border rounded px-2 py-1" /></div>
-            <div><label className="text-sm">Mana Cost</label><input name="mana_cost" type="number" value={form.mana_cost} onChange={e => setForm({...form, mana_cost: Number(e.target.value)})} className="w-full border rounded px-2 py-1" /></div>
-            <div><label className="text-sm">Base Damage</label><input name="base_damage" type="number" value={form.base_damage} onChange={e => setForm({...form, base_damage: Number(e.target.value)})} className="w-full border rounded px-2 py-1" /></div>
-            <div><label className="text-sm">Animation Key</label><input name="animation_key" value={form.animation_key} onChange={e => setForm({...form, animation_key: e.target.value})} className="w-full border rounded px-2 py-1" /></div>
-            <div><label className="text-sm">Sort Order</label><input name="sort_order" type="number" value={form.sort_order} onChange={e => setForm({...form, sort_order: Number(e.target.value)})} className="w-full border rounded px-2 py-1" /></div>
-            <div><label className="text-sm">Icon URL</label><input name="icon_url" value={form.icon_url} onChange={e => setForm({...form, icon_url: e.target.value})} className="w-full border rounded px-2 py-1" /></div>
+            <div>
+              <label className="text-sm">Slug <Tip text="Identificador único. Ex.: golpe_poderoso, cura_basica" /></label>
+              <input name="slug" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} className="w-full border rounded px-2 py-1" required />
+            </div>
+            <div>
+              <label className="text-sm">Nome de Exibição</label>
+              <input name="name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full border rounded px-2 py-1" required />
+            </div>
+            <div>
+              <label className="text-sm">Tipo <Tip text="Ativa: jogador usa manualmente. Passiva: efeito automático (ex.: +10% HP)" /></label>
+              <select name="type" value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="w-full border rounded px-2 py-1">
+                {Object.entries(SKILL_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm">Alvo <Tip text="Quem recebe o efeito da skill" /></label>
+              <select name="target" value={form.target} onChange={e => setForm({...form, target: e.target.value})} className="w-full border rounded px-2 py-1">
+                {Object.entries(TARGETS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm">Recarga (ms) <Tip text="Tempo de espera em milissegundos antes de poder usar de novo. 0 = sem recarga" /></label>
+              <input name="cooldown_ms" type="number" value={form.cooldown_ms} onChange={e => setForm({...form, cooldown_ms: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="text-sm">Custo de Mana <Tip text="Mana consumida ao usar. 0 = skill gratuita" /></label>
+              <input name="mana_cost" type="number" value={form.mana_cost} onChange={e => setForm({...form, mana_cost: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="text-sm">Dano Base <Tip text="Quantidade de dano causado (0 para skills de suporte/cura)" /></label>
+              <input name="base_damage" type="number" value={form.base_damage} onChange={e => setForm({...form, base_damage: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="text-sm">Chave de Animação <Tip text="Nome da animação no código do jogo. Ex.: slash_01, fireball_cast" /></label>
+              <input name="animation_key" value={form.animation_key} onChange={e => setForm({...form, animation_key: e.target.value})} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="text-sm">Ordem de Exibição</label>
+              <input name="sort_order" type="number" value={form.sort_order} onChange={e => setForm({...form, sort_order: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="text-sm">URL do Ícone <Tip text="Ícone da skill na UI (64x64 ou 128x128 PNG)" /></label>
+              <input name="icon_url" value={form.icon_url} onChange={e => setForm({...form, icon_url: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="https://..." />
+            </div>
           </div>
-          <div><label className="text-sm">Descrição</label><textarea name="description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded px-2 py-1" /></div>
-          <div><label className="text-sm">Effects (JSON)</label><textarea name="effects" value={form.effects} onChange={e => setForm({...form, effects: e.target.value})} className="w-full border rounded px-2 py-1 font-mono text-xs" rows={4} /></div>
-          <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} /> Ativo</label>
+          <div>
+            <label className="text-sm">Descrição <Tip text="Texto exibido ao jogador. Ex.: 'Causa 150 de dano e atordoa o inimigo por 1s'" /></label>
+            <textarea name="description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded px-2 py-1" />
+          </div>
+          <div>
+            <label className="text-sm">Efeitos (JSON) <Tip text="Efeitos adicionais em formato JSON. Ex.: {&quot;stun_ms&quot;:1000} para atordoar, {&quot;heal&quot;:50} para curar, {&quot;dot&quot;:{&quot;dmg&quot;:10,&quot;ticks&quot;:3}} para dano ao longo do tempo" /></label>
+            <textarea name="effects" value={form.effects} onChange={e => setForm({...form, effects: e.target.value})} className="w-full border rounded px-2 py-1 font-mono text-xs" rows={4} placeholder='{"stun_ms":1000}' />
+          </div>
+          <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} /> Ativa</label>
           <div className="flex gap-2">
             <button type="submit" disabled={isPending} className="px-4 py-2 bg-primary text-primary-foreground rounded disabled:opacity-50">{isPending ? 'Salvando...' : editing ? 'Atualizar' : 'Criar'}</button>
             <button type="button" onClick={() => { setShowForm(false); setEditing(null) }} className="px-4 py-2 border rounded">Cancelar</button>
@@ -82,17 +132,19 @@ export default function SkillsPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tipo</th><th className="p-2 text-left">Target</th>
-              <th className="p-2 text-left">Cooldown</th><th className="p-2 text-left">Mana</th><th className="p-2 text-left">Damage</th>
-              <th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th>
+              <th className="p-2 text-left">Nome</th><th className="p-2 text-left">Tipo</th><th className="p-2 text-left">Alvo</th>
+              <th className="p-2 text-left">Recarga</th><th className="p-2 text-left">Mana</th><th className="p-2 text-left">Dano</th>
+              <th className="p-2 text-left">Ativa</th><th className="p-2 text-left">Ações</th>
             </tr>
           </thead>
           <tbody>
             {skills.map(skill => (
               <tr key={skill.id} className="border-t">
-                <td className="p-2">{skill.name}</td><td className="p-2">{skill.type}</td><td className="p-2">{skill.target}</td>
+                <td className="p-2 font-medium">{skill.name}</td>
+                <td className="p-2">{SKILL_TYPES[skill.type] || skill.type}</td>
+                <td className="p-2">{TARGETS[skill.target] || skill.target}</td>
                 <td className="p-2">{skill.cooldown_ms}ms</td><td className="p-2">{skill.mana_cost}</td><td className="p-2">{skill.base_damage}</td>
-                <td className="p-2">{skill.is_active ? 'Sim' : 'Nao'}</td>
+                <td className="p-2">{skill.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
                   <button onClick={() => handleEdit(skill)} className="text-blue-600 underline">Editar</button>
                   <button onClick={() => handleDelete(skill.id)} className="text-red-600 underline">Excluir</button>
