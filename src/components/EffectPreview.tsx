@@ -42,32 +42,31 @@ export const READY_MADE_LOTTIE: Record<string, string> = {
 }
 
 function useLottieJson(url: string | null) {
-  const [data, setData] = useState<object | null>(null)
-  const [failed, setFailed] = useState(false)
+  const [loaded, setLoaded] = useState<{ url: string; json: object } | null>(
+    null,
+  )
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
   useEffect(() => {
-    if (!url) {
-      setData(null)
-      setFailed(true)
-      return
-    }
+    if (!url) return
     let alive = true
-    setData(null)
-    setFailed(false)
     fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error('http ' + r.status)
         return r.json()
       })
       .then((j) => {
-        if (alive) setData(j)
+        if (alive) setLoaded({ url, json: j })
       })
       .catch(() => {
-        if (alive) setFailed(true)
+        if (alive) setFailedUrl(url)
       })
     return () => {
       alive = false
     }
   }, [url])
+  // Só vale o JSON da URL atual; ao trocar de tipo, volta ao loading.
+  const data = loaded && loaded.url === url ? loaded.json : null
+  const failed = !url || failedUrl === url
   return { data, failed }
 }
 
