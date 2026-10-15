@@ -7,6 +7,7 @@ import { Zap, Plus, Pencil, Trash2, Eye, Sparkles, Copy } from 'lucide-react'
 import { useTable, SearchBox, Th, Counters } from '@/components/ui/data-table'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { DetailModal, DetailRow, DetailImage } from '@/components/ui/detail-modal'
+import { EffectPreview, SkillEffectFields } from '@/components/EffectPreview'
 import { suggestSkillStats } from '@/lib/balance'
 import { listEffects, listSkillEffects, addSkillEffect, deleteSkillEffect } from '@/lib/actions/effects'
 
@@ -19,6 +20,7 @@ const TARGETS: Record<string, string> = {
 const emptyForm = {
   slug: '', name: '', description: '', type: 'active', target: 'enemy',
   cooldown_ms: 0, mana_cost: 0, base_damage: 0, icon_url: '', animation_key: '',
+  effect_type: 'slash', effect_color: '#FF4444', effect_intensity: 1, effect_lottie_url: '',
   is_active: true, sort_order: 0,
 }
 
@@ -64,6 +66,8 @@ export default function SkillsPage() {
       slug: skill.slug, name: skill.name, description: skill.description || '', type: skill.type,
       target: skill.target, cooldown_ms: skill.cooldown_ms, mana_cost: skill.mana_cost,
       base_damage: skill.base_damage, icon_url: skill.icon_url || '', animation_key: skill.animation_key || '',
+      effect_type: skill.effect_type || 'slash', effect_color: skill.effect_color || '#FF4444',
+      effect_intensity: skill.effect_intensity || 1, effect_lottie_url: skill.effect_lottie_url || '',
       is_active: skill.is_active, sort_order: skill.sort_order,
     })
     setShowForm(true)
@@ -170,6 +174,15 @@ export default function SkillsPage() {
             <label className="text-sm">Descrição <Tooltip text="Texto exibido ao jogador. Ex.: 'Causa 150 de dano e atordoa o inimigo por 1s'" /></label>
             <textarea name="description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded px-2 py-1" />
           </div>
+          <div className="border rounded p-3">
+            <SkillEffectFields
+              value={{
+                effect_type: form.effect_type, effect_color: form.effect_color,
+                effect_intensity: form.effect_intensity, effect_lottie_url: form.effect_lottie_url,
+              }}
+              onChange={(v) => setForm({ ...form, ...v })}
+            />
+          </div>
           <div className="rounded bg-muted/60 p-2 text-xs text-muted-foreground">
             Efeitos vinculados no botão <strong>Ver</strong> da lista (catálogo de efeitos, sem JSON).
           </div>
@@ -236,6 +249,24 @@ export default function SkillsPage() {
           <DetailRow label="Tipo / Alvo" value={`${SKILL_TYPES[viewing.type] || viewing.type} / ${TARGETS[viewing.target] || viewing.target}`} />
           <DetailRow label="Recarga / Mana / Dano" value={`${viewing.cooldown_ms}ms / ${viewing.mana_cost} / ${viewing.base_damage}`} />
           <DetailRow label="Animação" value={<code>{viewing.animation_key || '—'}</code>} />
+          <DetailRow
+            label="Efeito visual"
+            value={
+              <span className="inline-flex items-center gap-3">
+                <EffectPreview
+                  effectType={viewing.effect_type || 'slash'}
+                  effectColor={viewing.effect_color || '#FF4444'}
+                  effectLottieUrl={viewing.effect_lottie_url}
+                  effectIntensity={viewing.effect_intensity || 1}
+                  size={72}
+                />
+                <code className="text-xs">
+                  {viewing.effect_type || 'slash'}
+                  {viewing.effect_lottie_url ? ' • Lottie próprio' : ' • Lottie pronto'}
+                </code>
+              </span>
+            }
+          />
           <DetailRow label="Descrição" value={viewing.description || '—'} />
           <DetailRow label="Ativa" value={viewing.is_active ? 'Sim' : 'Não'} />
 
