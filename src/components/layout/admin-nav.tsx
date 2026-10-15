@@ -6,6 +6,7 @@ export default function AdminNav() {
     { href: '/mobs', label: 'Inimigos' },
     { href: '/skills', label: 'Habilidades' },
     { href: '/stages', label: 'Fases' },
+    { href: '/menus-flutuantes', label: 'Flutuantes' },
     { href: '/waves', label: 'Ondas' },
     { href: '/loot-tables', label: 'Loot' },
     { href: '/npcs', label: 'NPCs' },
