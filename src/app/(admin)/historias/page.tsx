@@ -5,14 +5,15 @@ import {
   listStories, createStory, updateStory, deleteStory,
   listScenes, createScene, updateScene, deleteScene,
   listLines, createLine, updateLine, deleteLine,
-  listChoices, createChoice, deleteChoice,
+  listChoices, createChoice, updateChoice, deleteChoice,
 } from '@/lib/actions/stories'
 import { listNpcs } from '@/lib/actions/npcs'
 import { listItems } from '@/lib/actions/items'
+import { listZones } from '@/lib/actions/zones'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { StoryTester } from '@/components/StoryTester'
-import { Plus, Pencil, Trash2, BookOpen, MessageSquare, GitBranch, Play, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, BookOpen, MessageSquare, GitBranch, Play, ChevronDown, ChevronRight, MapPin } from 'lucide-react'
 import { SearchBox, Counters } from '@/components/ui/data-table'
 
 const SPEAKERS: Record<string, string> = { narrator: 'Narrador', npc: 'NPC', player: 'Jogador' }
@@ -28,6 +29,7 @@ export default function HistoriasPage() {
   const [testing, setTesting] = useState<any>(null)
   const [npcs, setNpcs] = useState<any[]>([])
   const [items, setItems] = useState<any[]>([])
+  const [zones, setZones] = useState<any[]>([])
   const [isPending, startTransition] = useTransition()
 
   const [showStoryForm, setShowStoryForm] = useState(false)
@@ -38,13 +40,24 @@ export default function HistoriasPage() {
   const [editingScene, setEditingScene] = useState<any>(null)
   const [showSceneForm, setShowSceneForm] = useState(false)
 
-  const [lineForm, setLineForm] = useState({ order_index: 0, speaker_type: 'narrator', speaker_name: '', npc_id: '', text: '', portrait_url: '' })
+  const [lineForm, setLineForm] = useState({ order_index: 0, speaker_type: 'narrator', speaker_name: '', npc_id: '', text: '', portrait_url: '', unlock_zone_id: '' })
   const [editingLine, setEditingLine] = useState<any>(null)
   const [showLineForm, setShowLineForm] = useState(false)
 
-  const [choiceForm, setChoiceForm] = useState({ line_id: '', label: '', next_scene_id: '', reward_xp: 0, reward_item_id: '', reward_qty: 1, sort_order: 0 })
+  const [choiceForm, setChoiceForm] = useState({ line_id: '', label: '', next_scene_id: '', unlock_zone_id: '', reward_xp: 0, reward_item_id: '', reward_qty: 1, sort_order: 0 })
+  const [editingChoice, setEditingChoice] = useState<any>(null)
   const [showChoiceForm, setShowChoiceForm] = useState(false)
   const [q, setQ] = useState('')
+
+  const zoneName = (zoneId?: string | null) => {
+    if (!zoneId) return null
+    return zones.find((z: any) => z.id === zoneId)?.name || 'Zona'
+  }
+  const sceneLabel = (sceneId?: string | null) => {
+    if (!sceneId) return 'continua'
+    const s = scenes.find((sc: any) => sc.id === sceneId)
+    return s ? `cena #${s.order_index}${s.title ? ` (${s.title})` : ''}` : `cena …${String(sceneId).slice(0, 8)}`
+  }
 
   const storyList = q.trim()
     ? stories.filter((s: any) => `${s.name} ${s.slug}`.toLowerCase().includes(q.trim().toLowerCase()))
@@ -52,7 +65,12 @@ export default function HistoriasPage() {
   const activeStories = stories.filter((s: any) => s.is_active).length
 
   const loadStories = () => listStories().then(setStories).catch(() => setStories([]))
-  useEffect(() => { loadStories(); listNpcs().then(setNpcs).catch(() => {}); listItems().then(setItems).catch(() => {}) }, [])
+  useEffect(() => {
+    loadStories()
+    listNpcs().then(setNpcs).catch(() => {})
+    listItems().then(setItems).catch(() => {})
+    listZones().then(setZones).catch(() => {})
+  }, [])
 
   const selectStory = (s: any) => {
     setActiveStory(s); setActiveScene(null); setLines([]); setChoices({}); setCounts({})
@@ -106,7 +124,11 @@ export default function HistoriasPage() {
         </div>
         <div className="flex gap-2">
           {activeStory && (
-            <button onClick={() => setTesting(activeStory)} className="px-4 py-2 border rounded inline-flex items-center gap-2"><Play size={16} /> Testar história</button>
+            <>
+              <button onClick={() => setTesting(activeStory)} className="px-4 py-2 border rounded inline-flex items-center gap-2"><Play size={16} /> Testar história</button>
+              <button onClick={() => { setEditingStory(activeStory); setStoryForm({ slug: activeStory.slug, name: activeStory.name, description: activeStory.description || '', cover_url: activeStory.cover_url || '', lore_reward: activeStory.lore_reward ?? 0, is_active: activeStory.is_active, sort_order: activeStory.sort_order ?? 0 }); setShowStoryForm(true) }} className="px-4 py-2 border rounded inline-flex items-center gap-2"><Pencil size={16} /> Editar história</button>
+              <button onClick={() => { if (confirm('Excluir esta história e todas as cenas/falas?')) run(async () => { await deleteStory(activeStory.id); setActiveStory(null); setScenes([]); setLines([]) }) }} className="px-3 py-2 border border-red-500/40 text-red-500 rounded inline-flex items-center gap-1 text-sm"><Trash2 size={14} /></button>
+            </>
           )}
           <button onClick={() => { setEditingStory(null); setStoryForm({ slug: '', name: '', description: '', cover_url: '', lore_reward: 0, is_active: true, sort_order: 0 }); setShowStoryForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2"><Plus size={16} /> Nova História</button>
         </div>
@@ -190,12 +212,12 @@ export default function HistoriasPage() {
                   <div className="mt-3 space-y-2 border-t pt-3">
                     <div className="flex justify-between items-center">
                       <h4 className="font-semibold text-sm flex items-center gap-1"><MessageSquare size={14} /> Falas (em ordem)</h4>
-                      <button onClick={() => { setEditingLine(null); setLineForm({ order_index: lines.length, speaker_type: 'narrator', speaker_name: '', npc_id: '', text: '', portrait_url: '' }); setShowLineForm(true) }} className="text-sm px-3 py-1 border rounded inline-flex items-center gap-1"><Plus size={12} /> Nova Fala</button>
+                      <button onClick={() => { setEditingLine(null); setLineForm({ order_index: lines.length, speaker_type: 'narrator', speaker_name: '', npc_id: '', text: '', portrait_url: '', unlock_zone_id: '' }); setShowLineForm(true) }} className="text-sm px-3 py-1 border rounded inline-flex items-center gap-1"><Plus size={12} /> Nova Fala</button>
                     </div>
 
                     {showLineForm && (
-                      <form onSubmit={(e) => { e.preventDefault(); run(async () => { const fd = new FormData(); fd.set('scene_id', sc.id); fd.set('order_index', String(lineForm.order_index)); fd.set('speaker_type', lineForm.speaker_type); fd.set('speaker_name', lineForm.speaker_name); fd.set('npc_id', lineForm.npc_id); fd.set('text', lineForm.text); fd.set('portrait_url', lineForm.portrait_url); if (editingLine) await updateLine(editingLine.id, fd); else await createLine(fd); setShowLineForm(false); setEditingLine(null) }) }} className="border rounded p-3 space-y-2 bg-muted/30">
-                        <div className="grid grid-cols-4 gap-2">
+                      <form onSubmit={(e) => { e.preventDefault(); run(async () => { const fd = new FormData(); fd.set('scene_id', sc.id); fd.set('order_index', String(lineForm.order_index)); fd.set('speaker_type', lineForm.speaker_type); fd.set('speaker_name', lineForm.speaker_name); fd.set('npc_id', lineForm.npc_id); fd.set('text', lineForm.text); fd.set('portrait_url', lineForm.portrait_url); fd.set('unlock_zone_id', lineForm.unlock_zone_id); if (editingLine) await updateLine(editingLine.id, fd); else await createLine(fd); setShowLineForm(false); setEditingLine(null) }) }} className="border rounded p-3 space-y-2 bg-muted/30">
+                        <div className="grid grid-cols-5 gap-2">
                           <div><label className="text-xs">Ordem</label><input type="number" value={lineForm.order_index} onChange={e => setLineForm({ ...lineForm, order_index: Number(e.target.value) })} className="w-full border rounded px-2 py-1" /></div>
                           <div><label className="text-xs">Quem fala <Tooltip text="Narrador = texto corrido. NPC = usa retrato do NPC. Jogador = fala do herói." /></label>
                             <select value={lineForm.speaker_type} onChange={e => setLineForm({ ...lineForm, speaker_type: e.target.value })} className="w-full border rounded px-2 py-1">
@@ -209,12 +231,18 @@ export default function HistoriasPage() {
                             </select>
                           </div>
                           <div><label className="text-xs">Nome exibido (opcional)</label><input value={lineForm.speaker_name} onChange={e => setLineForm({ ...lineForm, speaker_name: e.target.value })} className="w-full border rounded px-2 py-1" placeholder="Ex.: ???" /></div>
+                          <div><label className="text-xs">Libera área / cidade <Tooltip text="Ao exibir esta fala na história, libera esta zona (cidade, vila, arena) para o herói ativo do jogador." /></label>
+                            <select value={lineForm.unlock_zone_id} onChange={e => setLineForm({ ...lineForm, unlock_zone_id: e.target.value })} className="w-full border rounded px-2 py-1">
+                              <option value="">Nenhuma</option>
+                              {zones.map(z => <option key={z.id} value={z.id}>{z.name}{z.starter ? ' (Inicial)' : ''}</option>)}
+                            </select>
+                          </div>
                         </div>
                         <div><label className="text-xs">Texto da fala</label><textarea value={lineForm.text} onChange={e => setLineForm({ ...lineForm, text: e.target.value })} className="w-full border rounded px-2 py-1" rows={5} required /></div>
                         <ImageUpload label="Retrato da fala (opcional)" fieldName="portrait_url" tooltipText="Se vazio e houver NPC, o app usa o retrato do NPC." folder="stories" value={lineForm.portrait_url} onChange={(url) => setLineForm({ ...lineForm, portrait_url: url })} hint="PNG retrato (opcional, saída 512×512)" forceSize={512} />
                         <div className="flex gap-2">
-                          <button type="submit" disabled={isPending} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm disabled:opacity-50">Salvar fala</button>
-                          <button type="button" onClick={() => setShowLineForm(false)} className="px-3 py-1.5 border rounded text-sm">Cancelar</button>
+                          <button type="submit" disabled={isPending} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-sm disabled:opacity-50">{editingLine ? 'Atualizar fala' : 'Salvar fala'}</button>
+                          <button type="button" onClick={() => { setShowLineForm(false); setEditingLine(null) }} className="px-3 py-1.5 border rounded text-sm">Cancelar</button>
                         </div>
                       </form>
                     )}
@@ -222,41 +250,145 @@ export default function HistoriasPage() {
                     {lines.map(l => (
                       <div key={l.id} className="border rounded p-2 text-sm">
                         <div className="flex justify-between gap-2">
-                          <span><strong>#{l.order_index}</strong> <span className="text-muted-foreground">[{SPEAKERS[l.speaker_type] || l.speaker_type}{l.npcs?.name ? `: ${l.npcs.name}` : l.speaker_name ? `: ${l.speaker_name}` : ''}]</span> — {l.text}</span>
+                          <span>
+                            <strong>#{l.order_index}</strong>{' '}
+                            <span className="text-muted-foreground">[{SPEAKERS[l.speaker_type] || l.speaker_type}{l.npcs?.name ? `: ${l.npcs.name}` : l.speaker_name ? `: ${l.speaker_name}` : ''}]</span>
+                            {l.unlock_zone_id && (
+                              <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 inline-flex items-center gap-1">
+                                <MapPin size={10} /> Libera: {zoneName(l.unlock_zone_id)}
+                              </span>
+                            )}
+                            {' '}— {l.text}
+                          </span>
                           <span className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => { setEditingLine(l); setLineForm({ order_index: l.order_index, speaker_type: l.speaker_type, speaker_name: l.speaker_name || '', npc_id: l.npc_id || '', text: l.text, portrait_url: l.portrait_url || '' }); setShowLineForm(true) }} className="text-blue-600 underline">Editar</button>
+                            <button onClick={() => { setEditingLine(l); setLineForm({ order_index: l.order_index, speaker_type: l.speaker_type, speaker_name: l.speaker_name || '', npc_id: l.npc_id || '', text: l.text, portrait_url: l.portrait_url || '', unlock_zone_id: l.unlock_zone_id || '' }); setShowLineForm(true) }} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
                             <button onClick={() => { if (confirm('Excluir fala e escolhas?')) run(() => deleteLine(l.id)) }} className="text-red-600 underline">Excluir</button>
                           </span>
                         </div>
-                        <div className="mt-1 pl-3 space-y-1">
+                        <div className="mt-1.5 pl-3 space-y-1.5">
                           {(choices[l.id] || []).map(c => (
-                            <div key={c.id} className="flex justify-between text-xs bg-muted/40 rounded px-2 py-1">
-                              <span><GitBranch size={11} className="inline mr-1" />“{c.label}” → {c.next_scene_id ? `cena …${c.next_scene_id.slice(0, 8)}` : 'continua'}{Number(c.reward_xp) > 0 ? ` • +${c.reward_xp} XP` : ''}{c.items?.name ? ` • ${c.reward_qty}x ${c.items.name}` : ''}</span>
-                              <button onClick={() => { if (confirm('Excluir escolha?')) run(() => deleteChoice(c.id)) }} className="text-red-600 underline">Excluir</button>
+                            <div key={c.id} className="flex justify-between items-center text-xs bg-muted/40 border border-border/60 rounded px-2.5 py-1.5">
+                              <span className="flex flex-wrap items-center gap-1.5">
+                                <GitBranch size={11} className="inline text-primary" />
+                                <span className="text-muted-foreground">#{c.sort_order ?? 0}</span>
+                                <strong className="text-foreground">“{c.label}”</strong>
+                                <span className="text-muted-foreground">→ {sceneLabel(c.next_scene_id)}</span>
+                                {c.unlock_zone_id && (
+                                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 inline-flex items-center gap-1">
+                                    <MapPin size={10} /> Libera: {zoneName(c.unlock_zone_id)}
+                                  </span>
+                                )}
+                                {Number(c.reward_xp) > 0 && <span>• +{c.reward_xp} XP</span>}
+                                {c.items?.name && <span>• {c.reward_qty}x {c.items.name}</span>}
+                              </span>
+                              <span className="flex gap-2 flex-shrink-0 ml-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingChoice(c)
+                                    setChoiceForm({
+                                      line_id: l.id,
+                                      label: c.label || '',
+                                      next_scene_id: c.next_scene_id || '',
+                                      unlock_zone_id: c.unlock_zone_id || '',
+                                      reward_xp: c.reward_xp ?? 0,
+                                      reward_item_id: c.reward_item_id || '',
+                                      reward_qty: c.reward_qty ?? 1,
+                                      sort_order: c.sort_order ?? 0,
+                                    })
+                                    setShowChoiceForm(true)
+                                  }}
+                                  className="text-blue-600 underline inline-flex items-center gap-1"
+                                >
+                                  <Pencil size={10} /> Editar
+                                </button>
+                                <button onClick={() => { if (confirm('Excluir escolha?')) run(() => deleteChoice(c.id)) }} className="text-red-600 underline">Excluir</button>
+                              </span>
                             </div>
                           ))}
                           {!showChoiceForm || choiceForm.line_id !== l.id ? (
-                            <button onClick={() => { setChoiceForm({ line_id: l.id, label: '', next_scene_id: '', reward_xp: 0, reward_item_id: '', reward_qty: 1, sort_order: (choices[l.id]?.length || 0) }); setShowChoiceForm(true) }} className="text-xs text-blue-600 underline">+ Adicionar escolha do jogador</button>
+                            <button
+                              onClick={() => {
+                                setEditingChoice(null)
+                                setChoiceForm({
+                                  line_id: l.id,
+                                  label: '',
+                                  next_scene_id: '',
+                                  unlock_zone_id: '',
+                                  reward_xp: 0,
+                                  reward_item_id: '',
+                                  reward_qty: 1,
+                                  sort_order: (choices[l.id]?.length || 0),
+                                })
+                                setShowChoiceForm(true)
+                              }}
+                              className="text-xs text-blue-600 underline inline-flex items-center gap-1"
+                            >
+                              + Adicionar opção do jogador
+                            </button>
                           ) : (
-                            <form onSubmit={(e) => { e.preventDefault(); run(async () => { const fd = new FormData(); fd.set('line_id', l.id); fd.set('label', choiceForm.label); fd.set('next_scene_id', choiceForm.next_scene_id); fd.set('reward_xp', String(choiceForm.reward_xp)); fd.set('reward_item_id', choiceForm.reward_item_id); fd.set('reward_qty', String(choiceForm.reward_qty)); fd.set('sort_order', String(choiceForm.sort_order)); await createChoice(fd); setShowChoiceForm(false) }) }} className="grid grid-cols-4 gap-2 border rounded p-2 bg-muted/30">
-                              <div className="col-span-2"><label className="text-xs">Texto do botão <Tooltip text="O que o jogador lê e clica. Ex.: 'Aceitar a missão'" /></label><input value={choiceForm.label} onChange={e => setChoiceForm({ ...choiceForm, label: e.target.value })} className="w-full border rounded px-2 py-1" required /></div>
-                              <div><label className="text-xs">Pula para cena <Tooltip text="Vazio = segue a ordem normal. Preenchido = desvia a história." /></label>
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault()
+                                run(async () => {
+                                  const fd = new FormData()
+                                  fd.set('line_id', l.id)
+                                  fd.set('label', choiceForm.label)
+                                  fd.set('next_scene_id', choiceForm.next_scene_id)
+                                  fd.set('unlock_zone_id', choiceForm.unlock_zone_id)
+                                  fd.set('reward_xp', String(choiceForm.reward_xp))
+                                  fd.set('reward_item_id', choiceForm.reward_item_id)
+                                  fd.set('reward_qty', String(choiceForm.reward_qty))
+                                  fd.set('sort_order', String(choiceForm.sort_order))
+                                  if (editingChoice) await updateChoice(editingChoice.id, fd)
+                                  else await createChoice(fd)
+                                  setShowChoiceForm(false)
+                                  setEditingChoice(null)
+                                })
+                              }}
+                              className="grid grid-cols-4 gap-2 border rounded p-3 bg-muted/30"
+                            >
+                              <div className="col-span-2">
+                                <label className="text-xs">Texto da opção <Tooltip text="O que o jogador lê e clica. Ex.: 'Aceitar a missão'" /></label>
+                                <input value={choiceForm.label} onChange={e => setChoiceForm({ ...choiceForm, label: e.target.value })} className="w-full border rounded px-2 py-1" required />
+                              </div>
+                              <div>
+                                <label className="text-xs">Ordem da opção</label>
+                                <input type="number" value={choiceForm.sort_order} onChange={e => setChoiceForm({ ...choiceForm, sort_order: Number(e.target.value) })} className="w-full border rounded px-2 py-1" />
+                              </div>
+                              <div>
+                                <label className="text-xs">Pula para cena <Tooltip text="Vazio = segue a ordem normal. Preenchido = desvia a história." /></label>
                                 <select value={choiceForm.next_scene_id} onChange={e => setChoiceForm({ ...choiceForm, next_scene_id: e.target.value })} className="w-full border rounded px-2 py-1">
                                   <option value="">Continua…</option>
                                   {scenes.filter(s => s.id !== sc.id).map(s => <option key={s.id} value={s.id}>#{s.order_index} {s.title}</option>)}
                                 </select>
                               </div>
-                              <div><label className="text-xs">Recompensa XP</label><input type="number" value={choiceForm.reward_xp} onChange={e => setChoiceForm({ ...choiceForm, reward_xp: Number(e.target.value) })} className="w-full border rounded px-2 py-1" /></div>
-                              <div><label className="text-xs">Item recompensa</label>
+                              <div>
+                                <label className="text-xs">Libera área / cidade <Tooltip text="Se o jogador escolher esta opção, libera esta zona (cidade, vila, arena) para o herói ativo." /></label>
+                                <select value={choiceForm.unlock_zone_id} onChange={e => setChoiceForm({ ...choiceForm, unlock_zone_id: e.target.value })} className="w-full border rounded px-2 py-1">
+                                  <option value="">Nenhuma</option>
+                                  {zones.map(z => <option key={z.id} value={z.id}>{z.name}{z.starter ? ' (Inicial)' : ''}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-xs">Recompensa XP</label>
+                                <input type="number" value={choiceForm.reward_xp} onChange={e => setChoiceForm({ ...choiceForm, reward_xp: Number(e.target.value) })} className="w-full border rounded px-2 py-1" />
+                              </div>
+                              <div>
+                                <label className="text-xs">Item recompensa</label>
                                 <select value={choiceForm.reward_item_id} onChange={e => setChoiceForm({ ...choiceForm, reward_item_id: e.target.value })} className="w-full border rounded px-2 py-1">
                                   <option value="">Nenhum</option>
                                   {items.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
                                 </select>
                               </div>
-                              <div><label className="text-xs">Qtd</label><input type="number" value={choiceForm.reward_qty} onChange={e => setChoiceForm({ ...choiceForm, reward_qty: Number(e.target.value) })} className="w-full border rounded px-2 py-1" /></div>
-                              <div className="col-span-2 flex gap-2 items-end">
-                                <button type="submit" disabled={isPending} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs disabled:opacity-50">Salvar escolha</button>
-                                <button type="button" onClick={() => setShowChoiceForm(false)} className="px-3 py-1.5 border rounded text-xs">Cancelar</button>
+                              <div>
+                                <label className="text-xs">Qtd</label>
+                                <input type="number" value={choiceForm.reward_qty} onChange={e => setChoiceForm({ ...choiceForm, reward_qty: Number(e.target.value) })} className="w-full border rounded px-2 py-1" />
+                              </div>
+                              <div className="col-span-4 flex gap-2 items-center pt-1">
+                                <button type="submit" disabled={isPending} className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs disabled:opacity-50">
+                                  {editingChoice ? 'Atualizar opção' : 'Salvar opção'}
+                                </button>
+                                <button type="button" onClick={() => { setShowChoiceForm(false); setEditingChoice(null) }} className="px-3 py-1.5 border rounded text-xs">Cancelar</button>
                               </div>
                             </form>
                           )}
@@ -275,6 +407,7 @@ export default function HistoriasPage() {
         <StoryTester
           story={testing}
           npcs={npcs}
+          zones={zones}
           onClose={() => setTesting(null)}
         />
       )}

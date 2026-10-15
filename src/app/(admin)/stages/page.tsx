@@ -17,7 +17,7 @@ const emptyStage = {
   zone_id: '', slug: '', name: '', description: '', stage_number: 1,
   recommended_level: 1, energy_cost: 1, is_boss_stage: false, is_active: true, sort_order: 0,
 }
-const emptyZone = { slug: '', name: '', description: '', bg_url: '', bg_parallax: false, is_active: true, sort_order: 0 }
+const emptyZone = { slug: '', name: '', description: '', bg_url: '', bg_parallax: false, starter: false, is_active: true, sort_order: 0 }
 
 export default function StagesPage() {
   const [stages, setStages] = useState<any[]>([])
@@ -72,7 +72,7 @@ export default function StagesPage() {
     setZoneEditing(zone)
     setZoneForm({
       slug: zone.slug, name: zone.name, description: zone.description || '',
-      bg_url: zone.bg_url || '', bg_parallax: zone.bg_parallax, is_active: zone.is_active, sort_order: zone.sort_order,
+      bg_url: zone.bg_url || '', bg_parallax: zone.bg_parallax, starter: Boolean(zone.starter), is_active: zone.is_active, sort_order: zone.sort_order,
     })
     setShowZoneForm(true)
   }
@@ -102,8 +102,8 @@ export default function StagesPage() {
       <div>
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-2xl font-semibold flex items-center gap-2"><Map size={20} /> Zonas</h2>
-            <p className="text-sm text-muted-foreground">Regiões do mapa onde as fases acontecem</p>
+            <h2 className="text-2xl font-semibold flex items-center gap-2"><Map size={20} /> Zonas / Áreas</h2>
+            <p className="text-sm text-muted-foreground">Regiões, cidades, vilas e arenas do mapa. O herói começa vendo apenas a zona inicial (ou a 1ª da lista) e libera as demais avançando na História.</p>
           </div>
           <button onClick={() => { setZoneEditing(null); setZoneForm(emptyZone); setShowZoneForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2">
             <Plus size={16} /> Nova Zona
@@ -144,6 +144,7 @@ export default function StagesPage() {
               <textarea name="description" value={zoneForm.description} onChange={e => setZoneForm({...zoneForm, description: e.target.value})} className="w-full border rounded px-2 py-1" />
             </div>
             <div className="flex gap-4">
+              <label className="flex items-center gap-2"><input type="checkbox" name="starter" checked={zoneForm.starter} onChange={e => setZoneForm({...zoneForm, starter: e.target.checked})} /> Zona inicial (starter) <Tip text="Visível desde o início sem precisar desbloquear em histórias. Outras zonas são liberadas por falas/escolhas." /></label>
               <label className="flex items-center gap-2"><input type="checkbox" name="bg_parallax" checked={zoneForm.bg_parallax} onChange={e => setZoneForm({...zoneForm, bg_parallax: e.target.checked})} /> Efeito Parallax <Tip text="Fundo se move em camadas para dar sensação de profundidade" /></label>
               <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={zoneForm.is_active} onChange={e => setZoneForm({...zoneForm, is_active: e.target.checked})} /> Ativa</label>
             </div>
@@ -168,6 +169,7 @@ export default function StagesPage() {
                   </td>
                   <td className="p-2 font-medium">
                     <button onClick={() => setViewingZone(zone)} className="underline underline-offset-2 hover:text-primary text-left">{zone.name}</button>
+                    {zone.starter && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">Inicial</span>}
                   </td>
                   <td className="p-2">{zone.bg_parallax ? 'Sim' : 'Não'}</td>
                   <td className="p-2">{zone.is_active ? 'Sim' : 'Não'}</td>
@@ -186,6 +188,7 @@ export default function StagesPage() {
           <DetailModal title={viewingZone.name} onClose={() => setViewingZone(null)}>
             <DetailImage label="Fundo" url={viewingZone.bg_url} size="w-full h-40" />
             <DetailRow label="Slug" value={<code>{viewingZone.slug}</code>} />
+            <DetailRow label="Zona Inicial" value={viewingZone.starter ? 'Sim (visível desde o início)' : 'Não (liberada via história)'} />
             <DetailRow label="Descrição" value={viewingZone.description || '—'} />
             <DetailRow label="Parallax" value={viewingZone.bg_parallax ? 'Sim' : 'Não'} />
             <DetailRow label="Ativa" value={viewingZone.is_active ? 'Sim' : 'Não'} />
