@@ -13,24 +13,53 @@ export async function listStories() {
 
 export async function createStory(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const { error } = await supabase.from('stories').insert({
+  const payload: Record<string, unknown> = {
     slug: data.slug, name: data.name, description: data.description || null,
     cover_url: data.cover_url || null,
+    lore_reward: Number(data.lore_reward) || 0,
     is_active: data.is_active === 'on', sort_order: Number(data.sort_order) || 0,
-  })
-  if (error) throw error
+  }
+  const { error } = await supabase.from('stories').insert(payload)
+  if (error) {
+    // Banco sem a migration 012: salva sem o prêmio em vez de quebrar.
+    if (isMissingColumn(error)) {
+      delete payload.lore_reward
+      const { error: retryError } = await supabase.from('stories').insert(payload)
+      if (retryError) throw retryError
+      revalidatePath(PATH)
+      return
+    }
+    throw error
+  }
   revalidatePath(PATH)
 }
 
 export async function updateStory(id: string, formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const { error } = await supabase.from('stories').update({
+  const payload: Record<string, unknown> = {
     slug: data.slug, name: data.name, description: data.description || null,
     cover_url: data.cover_url || null,
+    lore_reward: Number(data.lore_reward) || 0,
     is_active: data.is_active === 'on', sort_order: Number(data.sort_order) || 0,
-  }).eq('id', id)
-  if (error) throw error
+  }
+  const { error } = await supabase.from('stories').update(payload).eq('id', id)
+  if (error) {
+    if (isMissingColumn(error)) {
+      delete payload.lore_reward
+      const { error: retryError } = await supabase.from('stories').update(payload).eq('id', id)
+      if (retryError) throw retryError
+      revalidatePath(PATH)
+      return
+    }
+    throw error
+  }
   revalidatePath(PATH)
+}
+
+function isMissingColumn(error: { message?: string; code?: string }) {
+  const code = error?.code || ''
+  const msg = (error?.message || '').toLowerCase()
+  return code === '42703' || code === 'PGRST204' || msg.includes('column')
 }
 
 export async function deleteStory(id: string) {

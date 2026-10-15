@@ -11,7 +11,8 @@ import { listNpcs } from '@/lib/actions/npcs'
 import { listItems } from '@/lib/actions/items'
 import { Tooltip } from '@/components/ui/tooltip'
 import { ImageUpload } from '@/components/ui/image-upload'
-import { Plus, Pencil, Trash2, BookOpen, MessageSquare, GitBranch } from 'lucide-react'
+import { StoryTester } from '@/components/StoryTester'
+import { Plus, Pencil, Trash2, BookOpen, MessageSquare, GitBranch, Play, ChevronDown, ChevronRight } from 'lucide-react'
 import { SearchBox, Counters } from '@/components/ui/data-table'
 
 const SPEAKERS: Record<string, string> = { narrator: 'Narrador', npc: 'NPC', player: 'Jogador' }
@@ -23,12 +24,14 @@ export default function HistoriasPage() {
   const [activeScene, setActiveScene] = useState<any>(null)
   const [lines, setLines] = useState<any[]>([])
   const [choices, setChoices] = useState<Record<string, any[]>>({})
+  const [counts, setCounts] = useState<Record<string, { lines: number; choices: number }>>({})
+  const [testing, setTesting] = useState<any>(null)
   const [npcs, setNpcs] = useState<any[]>([])
   const [items, setItems] = useState<any[]>([])
   const [isPending, startTransition] = useTransition()
 
   const [showStoryForm, setShowStoryForm] = useState(false)
-  const [storyForm, setStoryForm] = useState({ slug: '', name: '', description: '', cover_url: '', is_active: true, sort_order: 0 })
+  const [storyForm, setStoryForm] = useState({ slug: '', name: '', description: '', cover_url: '', lore_reward: 0, is_active: true, sort_order: 0 })
   const [editingStory, setEditingStory] = useState<any>(null)
 
   const [sceneForm, setSceneForm] = useState({ order_index: 0, title: '', background_url: '' })
@@ -52,8 +55,25 @@ export default function HistoriasPage() {
   useEffect(() => { loadStories(); listNpcs().then(setNpcs).catch(() => {}); listItems().then(setItems).catch(() => {}) }, [])
 
   const selectStory = (s: any) => {
-    setActiveStory(s); setActiveScene(null); setLines([]); setChoices({})
-    listScenes(s.id).then(setScenes).catch(() => setScenes([]))
+    setActiveStory(s); setActiveScene(null); setLines([]); setChoices({}); setCounts({})
+    listScenes(s.id).then(async (ss) => {
+      setScenes(ss)
+      if (ss.length === 0) return
+      // Contagens por cena + abre a primeira sozinha (nada fica escondido).
+      const cc: Record<string, { lines: number; choices: number }> = {}
+      await Promise.all(ss.map(async (sc: any) => {
+        try {
+          const ls = await listLines(sc.id)
+          let ch = 0
+          for (const l of ls) {
+            try { ch += (await listChoices(l.id)).length } catch { /* sem escolhas */ }
+          }
+          cc[sc.id] = { lines: ls.length, choices: ch }
+        } catch { /* cena sem falas */ }
+      }))
+      setCounts(cc)
+      selectScene(ss[0])
+    }).catch(() => setScenes([]))
   }
 
   const selectScene = (sc: any) => {
@@ -84,7 +104,12 @@ export default function HistoriasPage() {
           <h2 className="text-2xl font-semibold flex items-center gap-2"><BookOpen size={20} /> Histórias</h2>
           <p className="text-sm text-muted-foreground">Visual novel: história → cenas (fundo) → falas (ordem) → escolhas do jogador</p>
         </div>
-        <button onClick={() => { setEditingStory(null); setStoryForm({ slug: '', name: '', description: '', cover_url: '', is_active: true, sort_order: 0 }); setShowStoryForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2"><Plus size={16} /> Nova História</button>
+        <div className="flex gap-2">
+          {activeStory && (
+            <button onClick={() => setTesting(activeStory)} className="px-4 py-2 border rounded inline-flex items-center gap-2"><Play size={16} /> Testar história</button>
+          )}
+          <button onClick={() => { setEditingStory(null); setStoryForm({ slug: '', name: '', description: '', cover_url: '', lore_reward: 0, is_active: true, sort_order: 0 }); setShowStoryForm(true) }} className="px-4 py-2 bg-primary text-primary-foreground rounded inline-flex items-center gap-2"><Plus size={16} /> Nova História</button>
+        </div>
       </div>
 
       {showStoryForm && (
@@ -93,6 +118,7 @@ export default function HistoriasPage() {
             <div><label className="text-sm">Slug <Tooltip text="Identificador único. Ex.: prologo_heroi" /></label><input name="slug" defaultValue={storyForm.slug} className="w-full border rounded px-2 py-1" required /></div>
             <div><label className="text-sm">Nome</label><input name="name" defaultValue={storyForm.name} className="w-full border rounded px-2 py-1" required /></div>
             <div><label className="text-sm">Ordem</label><input name="sort_order" type="number" defaultValue={storyForm.sort_order} className="w-full border rounded px-2 py-1" /></div>
+            <div><label className="text-sm">Lore ao concluir <Tooltip text="Pontos de lore pagos 1 vez por jogador ao terminar a história (gasta na Constelação). 0 = sem prêmio." /></label><input name="lore_reward" type="number" min={0} defaultValue={storyForm.lore_reward} className="w-full border rounded px-2 py-1" /></div>
           </div>
           <ImageUpload label="Capa da história" fieldName="cover_url" tooltipText="Imagem de capa 16:9 exibida na lista de histórias do app." folder="stories" value={storyForm.cover_url} onChange={(url) => setStoryForm({ ...storyForm, cover_url: url })} hint="JPG ou PNG 1280x720 (limite 1920px)" maxSize={1920} accept="image/png,image/jpeg,image/webp" />
           <div><label className="text-sm">Descrição</label><textarea name="description" defaultValue={storyForm.description} className="w-full border rounded px-2 py-1" /></div>
@@ -125,6 +151,7 @@ export default function HistoriasPage() {
             <h3 className="text-lg font-semibold">Cenas de “{activeStory.name}”</h3>
             <button onClick={() => { setEditingScene(null); setSceneForm({ order_index: scenes.length, title: '', background_url: '' }); setShowSceneForm(true) }} className="px-3 py-1.5 border rounded text-sm inline-flex items-center gap-1"><Plus size={14} /> Nova Cena</button>
           </div>
+          <p className="text-xs text-muted-foreground -mt-2">Clique numa cena para ver e adicionar as falas dela (NPC, texto, escolhas).</p>
 
           {showSceneForm && (
             <form onSubmit={(e) => { e.preventDefault(); run(async () => { const fd = new FormData(); fd.set('story_id', activeStory.id); fd.set('order_index', String(sceneForm.order_index)); fd.set('title', sceneForm.title); fd.set('background_url', sceneForm.background_url); if (editingScene) await updateScene(editingScene.id, fd); else await createScene(fd); setShowSceneForm(false); setEditingScene(null) }) }} className="border rounded p-4 space-y-3">
@@ -144,7 +171,15 @@ export default function HistoriasPage() {
             {scenes.map(sc => (
               <div key={sc.id} className={`border rounded p-3 ${activeScene?.id === sc.id ? 'border-primary' : ''}`}>
                 <div className="flex justify-between items-center">
-                  <button onClick={() => selectScene(sc)} className="font-semibold text-left">#{sc.order_index} — {sc.title || '(sem título)'}</button>
+                  <button onClick={() => selectScene(sc)} className="font-semibold text-left flex items-center gap-2">
+                    {activeScene?.id === sc.id ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    <span>#{sc.order_index} — {sc.title || '(sem título)'}</span>
+                    {counts[sc.id] && (
+                      <span className="text-xs font-normal text-muted-foreground">
+                        ({counts[sc.id].lines} fala(s) • {counts[sc.id].choices} escolha(s))
+                      </span>
+                    )}
+                  </button>
                   <div className="flex gap-2 text-sm">
                     <button onClick={() => { setEditingScene(sc); setSceneForm({ order_index: sc.order_index, title: sc.title || '', background_url: sc.background_url || '' }); setShowSceneForm(true) }} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
                     <button onClick={() => { if (confirm('Excluir cena e todas as falas?')) run(() => deleteScene(sc.id)) }} className="text-red-600 underline">Excluir</button>
@@ -235,6 +270,13 @@ export default function HistoriasPage() {
             ))}
           </div>
         </div>
+      )}
+      {testing && (
+        <StoryTester
+          story={testing}
+          npcs={npcs}
+          onClose={() => setTesting(null)}
+        />
       )}
     </div>
   )
