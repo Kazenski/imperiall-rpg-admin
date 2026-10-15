@@ -248,14 +248,14 @@ export default function MobsPage() {
                   <button onClick={() => setViewing(mob)} className="underline underline-offset-2 hover:text-primary text-left">{mob.name}</button>
                 </td>
                 <td className="p-2"><span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: TIERS[mob.tier]?.color + '20', color: TIERS[mob.tier]?.color }}>{TIERS[mob.tier]?.label || mob.tier}</span></td>
-                <td className="p-2">{mob.hp}</td><td className="p-2">{mob.atk}</td><td className="p-2">{mob.def}</td>
-                <td className="p-2">{mob.exp_reward}</td><td className="p-2">{mob.gold_reward}</td>
+                <td className="p-2 text-emerald-300 font-semibold">{mob.hp}</td><td className="p-2 text-rose-300 font-semibold">{mob.atk}</td><td className="p-2 text-amber-300 font-semibold">{mob.def}</td>
+                <td className="p-2 text-indigo-300 font-medium">{mob.exp_reward}</td><td className="p-2 text-yellow-300 font-medium">{mob.gold_reward}</td>
                 <td className="p-2">{mob.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
-                  <button onClick={() => setViewing(mob)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
-                  <button onClick={() => handleEdit(mob)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
-                  <button onClick={() => handleClone(mob)} className="underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
-                  <button onClick={() => handleDelete(mob.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
+                  <button onClick={() => setViewing(mob)} className="text-emerald-400 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
+                  <button onClick={() => handleEdit(mob)} className="text-blue-400 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleClone(mob)} className="text-amber-300 underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
+                  <button onClick={() => handleDelete(mob.id)} className="text-red-400 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>
             ))}

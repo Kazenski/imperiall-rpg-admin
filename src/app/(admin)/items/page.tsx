@@ -32,7 +32,7 @@ const SLOTS: Record<string, string> = {
 const emptyForm = {
   slug: '', name: '', description: '', type: 'weapon', rarity: 'common', slot: 'weapon',
   icon_url: '', sprite_url: '', stackable: false, max_stack: 1, price_gold: 0, price_gems: 0,
-  atk: '', def: '', hp: '', crit: '', is_active: true, sort_order: 0,
+  atk: '', def: '', hp: '', mp: '', crit: '', is_active: true, sort_order: 0,
 }
 
 export default function ItemsPage() {
@@ -87,7 +87,7 @@ export default function ItemsPage() {
       icon_url: item.icon_url || '', sprite_url: item.sprite_url || '',
       stackable: item.stackable, max_stack: item.max_stack, price_gold: item.price_gold,
       price_gems: item.price_gems,
-      atk: item.stats?.atk || '', def: item.stats?.def || '', hp: item.stats?.hp || '', crit: item.stats?.crit || '',
+      atk: item.stats?.atk || '', def: item.stats?.def || '', hp: item.stats?.hp || '', mp: item.stats?.mp || '', crit: item.stats?.crit || '',
       is_active: item.is_active, sort_order: item.sort_order,
     })
     setShowForm(true)
@@ -199,8 +199,12 @@ export default function ItemsPage() {
               <input name="def" type="number" value={form.def} onChange={e => setForm({...form, def: e.target.value})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm flex items-center gap-1"><Heart size={14} /> Vida (HP) <Tooltip text="Pontos de vida extras concedidos ao equipar" /></label>
+              <label className="text-sm flex items-center gap-1"><Heart size={14} className="text-emerald-400" /> Vida (HP) <Tooltip text="Pontos de vida extras concedidos ao equipar" /></label>
               <input name="hp" type="number" value={form.hp} onChange={e => setForm({...form, hp: e.target.value})} className="w-full border rounded px-2 py-1" />
+            </div>
+            <div>
+              <label className="text-sm flex items-center gap-1 text-sky-300 font-semibold">Pontos de Magia (MP) <Tooltip text="Pontos de magia (mana) extras concedidos ao equipar" /></label>
+              <input name="mp" type="number" value={form.mp} onChange={e => setForm({...form, mp: e.target.value})} className="w-full border border-sky-500/40 rounded px-2 py-1" />
             </div>
             <div>
               <label className="text-sm">Crítico (CRIT) <Tooltip text="Chance de crítico (%). Ex.: 5 = 5% de chance de dano dobrado" /></label>
@@ -261,7 +265,7 @@ export default function ItemsPage() {
               <Th label="Tipo" k="type" active={table.sortKey === 'type'} dir={table.sortDir} onClick={table.toggle} />
               <Th label="Raridade" k="rarity" active={table.sortKey === 'rarity'} dir={table.sortDir} onClick={table.toggle} />
               <Th label="ATK" k="atk" active={table.sortKey === 'atk'} dir={table.sortDir} onClick={table.toggle} />
-              <th className="p-2 text-left">DEF</th><th className="p-2 text-left">HP</th>
+              <th className="p-2 text-left">DEF</th><th className="p-2 text-left">HP</th><th className="p-2 text-left">MP</th>
               <Th label="Preço" k="price" active={table.sortKey === 'price'} dir={table.sortDir} onClick={table.toggle} />
               <th className="p-2 text-left">Ativo</th><th className="p-2 text-left">Ações</th>
             </tr>
@@ -280,7 +284,7 @@ export default function ItemsPage() {
                 </td>
                 <td className="p-2">{ITEM_TYPES[item.type] || item.type}</td>
                 <td className="p-2"><span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: RARITIES[item.rarity]?.color + '20', color: RARITIES[item.rarity]?.color }}>{RARITIES[item.rarity]?.label || item.rarity}</span></td>
-                <td className="p-2">{item.stats?.atk || 0}</td><td className="p-2">{item.stats?.def || 0}</td><td className="p-2">{item.stats?.hp || 0}</td>
+                <td className="p-2 text-rose-300 font-medium">{item.stats?.atk || 0}</td><td className="p-2 text-amber-300 font-medium">{item.stats?.def || 0}</td><td className="p-2 text-emerald-300 font-medium">{item.stats?.hp || 0}</td><td className="p-2 text-sky-300 font-medium">{item.stats?.mp || 0}</td>
                 <td className="p-2">{item.price_gold > 0 ? `${item.price_gold} ouro` : ''} {item.price_gems > 0 ? `${item.price_gems} gemas` : ''}</td>
                 <td className="p-2">{item.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
@@ -303,7 +307,7 @@ export default function ItemsPage() {
           <DetailRow label="Tipo" value={ITEM_TYPES[viewing.type] || viewing.type} />
           <DetailRow label="Raridade" value={RARITIES[viewing.rarity]?.label || viewing.rarity} />
           <DetailRow label="Slot" value={SLOTS[viewing.slot] || viewing.slot || '—'} />
-          <DetailRow label="ATK / DEF / HP" value={`${viewing.stats?.atk || 0} / ${viewing.stats?.def || 0} / ${viewing.stats?.hp || 0}`} />
+          <DetailRow label="ATK / DEF / HP / MP" value={`${viewing.stats?.atk || 0} / ${viewing.stats?.def || 0} / ${viewing.stats?.hp || 0} / ${viewing.stats?.mp || 0}`} />
           <DetailRow label="Crítico" value={viewing.stats?.crit ? `${viewing.stats.crit}%` : '—'} />
           <DetailRow label="Preço" value={`${viewing.price_gold || 0} ouro${viewing.price_gems ? ` + ${viewing.price_gems} gemas` : ''}`} />
           <DetailRow label="Empilhável" value={viewing.stackable ? `Sim (máx ${viewing.max_stack})` : 'Não'} />

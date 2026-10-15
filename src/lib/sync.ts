@@ -18,7 +18,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 export const SYNC_TABLES = [
   'items', 'skills', 'effects', 'mobs', 'zones', 'npcs', 'professions',
   'stories', 'characters', 'stages', 'story_scenes', 'recipes',
-  'skill_nodes', 'story_lines', 'loot_tables', 'waves',
+  'skill_nodes', 'constellation_nodes', 'story_lines', 'loot_tables', 'waves',
   'character_skills', 'character_traits', 'skill_effects', 'item_effects',
   'recipe_materials', 'item_upgrade_levels', 'story_choices',
   'wave_mobs', 'loot_table_entries', 'item_upgrade_materials',
@@ -28,7 +28,7 @@ export const TABLE_LABELS: Record<string, string> = {
   items: 'Itens', skills: 'Habilidades', effects: 'Efeitos', mobs: 'Inimigos',
   zones: 'Zonas', npcs: 'NPCs', professions: 'Profissões', stories: 'Histórias',
   characters: 'Heróis', stages: 'Fases', story_scenes: 'Cenas',
-  recipes: 'Receitas', skill_nodes: 'Nós da árvore', story_lines: 'Falas',
+  recipes: 'Receitas', skill_nodes: 'Nós da árvore', constellation_nodes: 'Nós de Constelação', story_lines: 'Falas',
   loot_tables: 'Tabelas de loot', waves: 'Ondas',
   character_skills: 'Skills do herói', character_traits: 'Vantagens',
   skill_effects: 'Efeitos da skill', item_effects: 'Efeitos do item',

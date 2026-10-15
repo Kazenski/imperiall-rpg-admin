@@ -109,10 +109,10 @@ export default function NpcsPage() {
                 <td className="p-2 font-medium"><button onClick={() => setViewing(n)} className="underline underline-offset-2 hover:text-primary">{n.name}</button></td>
                 <td className="p-2">{n.is_active ? 'Sim' : 'Não'}</td>
                 <td className="p-2 flex gap-2">
-                  <button onClick={() => setViewing(n)} className="text-green-700 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
-                  <button onClick={() => handleEdit(n)} className="text-blue-600 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
-                  <button onClick={() => handleClone(n)} className="underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
-                  <button onClick={() => handleDelete(n.id)} className="text-red-600 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
+                  <button onClick={() => setViewing(n)} className="text-emerald-400 underline inline-flex items-center gap-1"><Eye size={12} /> Ver</button>
+                  <button onClick={() => handleEdit(n)} className="text-blue-400 underline inline-flex items-center gap-1"><Pencil size={12} /> Editar</button>
+                  <button onClick={() => handleClone(n)} className="text-amber-300 underline inline-flex items-center gap-1" title="Abre edição com cópia para salvar com outro slug"><Copy size={12} /> Clonar</button>
+                  <button onClick={() => handleDelete(n.id)} className="text-red-400 underline inline-flex items-center gap-1"><Trash2 size={12} /> Excluir</button>
                 </td>
               </tr>
             ))}
