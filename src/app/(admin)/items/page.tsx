@@ -174,7 +174,7 @@ export default function ItemsPage() {
             </div>
             <div>
               <label className="text-sm">Slot de Equipamento <Tooltip text="Onde o item é equipado. 'Nenhum' para consumíveis e materiais" /></label>
-              <select name="slot" value={form.slot} onChange={e => setForm({...form, slot: e.target.value})} className="w-full border rounded px-2 py-1">
+              <select name="slot" value={form.slot} onChange={e => setForm({...form, slot: e.target.value, ...(e.target.value !== 'none' ? { stackable: false, max_stack: 1 } : {})})} className="w-full border rounded px-2 py-1">
                 {Object.entries(SLOTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
@@ -187,8 +187,8 @@ export default function ItemsPage() {
               <input name="price_gems" type="number" value={form.price_gems} onChange={e => setForm({...form, price_gems: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
             </div>
             <div>
-              <label className="text-sm">Máximo por Pilha <Tooltip text="Quantos deste item cabem num slot do inventário. 1 para equipamentos" /></label>
-              <input name="max_stack" type="number" value={form.max_stack} onChange={e => setForm({...form, max_stack: Number(e.target.value)})} className="w-full border rounded px-2 py-1" />
+              <label className="text-sm">Máximo por Pilha <Tooltip text={form.slot !== 'none' ? 'Equipáveis nunca empilham (1 linha por unidade no inventário)' : 'Quantos deste item cabem num slot do inventário. 1 para equipamentos'} /></label>
+              <input name="max_stack" type="number" value={form.max_stack} disabled={form.slot !== 'none'} onChange={e => setForm({...form, max_stack: Number(e.target.value)})} className="w-full border rounded px-2 py-1 disabled:opacity-50" />
             </div>
             <div>
               <label className="text-sm flex items-center gap-1"><Sword size={14} /> Ataque (ATK) <Tooltip text="Dano que o item adiciona ao jogador. 0 para armaduras puras" /></label>
@@ -236,7 +236,7 @@ export default function ItemsPage() {
             <textarea name="description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border rounded px-2 py-1" placeholder="Uma espada simples de aço..." />
           </div>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2"><input type="checkbox" name="stackable" checked={form.stackable} onChange={e => setForm({...form, stackable: e.target.checked})} /> Empilhável <Tooltip text="Se o item pode ter quantidade > 1 num slot (ex.: poções)" /></label>
+            <label className="flex items-center gap-2"><input type="checkbox" name="stackable" checked={form.slot !== 'none' ? false : form.stackable} disabled={form.slot !== 'none'} onChange={e => setForm({...form, stackable: e.target.checked})} /> Empilhável <Tooltip text={form.slot !== 'none' ? 'Itens equipáveis nunca empilham: cada unidade vira 1 linha (p/ vestir iguais em slots diferentes)' : 'Se o item pode ter quantidade > 1 num slot (ex.: poções)'} /></label>
             <label className="flex items-center gap-2"><input type="checkbox" name="is_active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} /> Ativo <Tooltip text="Itens inativos ficam salvos mas não aparecem no jogo" /></label>
           </div>
           <div className="flex gap-2">
