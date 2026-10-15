@@ -13,24 +13,53 @@ export async function listStories() {
 
 export async function createStory(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const { error } = await supabase.from('stories').insert({
+  const payload: Record<string, unknown> = {
     slug: data.slug, name: data.name, description: data.description || null,
     cover_url: data.cover_url || null,
+    lore_reward: Number(data.lore_reward) || 0,
     is_active: data.is_active === 'on', sort_order: Number(data.sort_order) || 0,
-  })
-  if (error) throw error
+  }
+  const { error } = await supabase.from('stories').insert(payload)
+  if (error) {
+    // Banco sem a migration 012: salva sem o prêmio em vez de quebrar.
+    if (isMissingColumn(error)) {
+      delete payload.lore_reward
+      const { error: retryError } = await supabase.from('stories').insert(payload)
+      if (retryError) throw retryError
+      revalidatePath(PATH)
+      return
+    }
+    throw error
+  }
   revalidatePath(PATH)
 }
 
 export async function updateStory(id: string, formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const { error } = await supabase.from('stories').update({
+  const payload: Record<string, unknown> = {
     slug: data.slug, name: data.name, description: data.description || null,
     cover_url: data.cover_url || null,
+    lore_reward: Number(data.lore_reward) || 0,
     is_active: data.is_active === 'on', sort_order: Number(data.sort_order) || 0,
-  }).eq('id', id)
-  if (error) throw error
+  }
+  const { error } = await supabase.from('stories').update(payload).eq('id', id)
+  if (error) {
+    if (isMissingColumn(error)) {
+      delete payload.lore_reward
+      const { error: retryError } = await supabase.from('stories').update(payload).eq('id', id)
+      if (retryError) throw retryError
+      revalidatePath(PATH)
+      return
+    }
+    throw error
+  }
   revalidatePath(PATH)
+}
+
+function isMissingColumn(error: { message?: string; code?: string }) {
+  const code = error?.code || ''
+  const msg = (error?.message || '').toLowerCase()
+  return code === '42703' || code === 'PGRST204' || msg.includes('column')
 }
 
 export async function deleteStory(id: string) {
@@ -79,23 +108,45 @@ export async function listLines(sceneId: string) {
 
 export async function createLine(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const { error } = await supabase.from('story_lines').insert({
+  const payload: Record<string, unknown> = {
     scene_id: data.scene_id, order_index: Number(data.order_index) || 0,
     speaker_type: data.speaker_type, speaker_name: data.speaker_name || null,
     npc_id: data.npc_id || null, text: data.text, portrait_url: data.portrait_url || null,
-  })
-  if (error) throw error
+    unlock_zone_id: data.unlock_zone_id || null,
+  }
+  const { error } = await supabase.from('story_lines').insert(payload)
+  if (error) {
+    if (isMissingColumn(error)) {
+      delete payload.unlock_zone_id
+      const { error: retryError } = await supabase.from('story_lines').insert(payload)
+      if (retryError) throw retryError
+      revalidatePath(PATH)
+      return
+    }
+    throw error
+  }
   revalidatePath(PATH)
 }
 
 export async function updateLine(id: string, formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const { error } = await supabase.from('story_lines').update({
+  const payload: Record<string, unknown> = {
     order_index: Number(data.order_index) || 0,
     speaker_type: data.speaker_type, speaker_name: data.speaker_name || null,
     npc_id: data.npc_id || null, text: data.text, portrait_url: data.portrait_url || null,
-  }).eq('id', id)
-  if (error) throw error
+    unlock_zone_id: data.unlock_zone_id || null,
+  }
+  const { error } = await supabase.from('story_lines').update(payload).eq('id', id)
+  if (error) {
+    if (isMissingColumn(error)) {
+      delete payload.unlock_zone_id
+      const { error: retryError } = await supabase.from('story_lines').update(payload).eq('id', id)
+      if (retryError) throw retryError
+      revalidatePath(PATH)
+      return
+    }
+    throw error
+  }
   revalidatePath(PATH)
 }
 
@@ -113,15 +164,55 @@ export async function listChoices(lineId: string) {
 
 export async function createChoice(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const { error } = await supabase.from('story_choices').insert({
+  const payload: Record<string, unknown> = {
     line_id: data.line_id, label: data.label,
     next_scene_id: data.next_scene_id || null,
+    next_line_id: data.next_line_id || null,
+    unlock_zone_id: data.unlock_zone_id || null,
     reward_xp: Number(data.reward_xp) || 0,
     reward_item_id: data.reward_item_id || null,
     reward_qty: Number(data.reward_qty) || 1,
     sort_order: Number(data.sort_order) || 0,
-  })
-  if (error) throw error
+  }
+  const { error } = await supabase.from('story_choices').insert(payload)
+  if (error) {
+    if (isMissingColumn(error)) {
+      delete payload.unlock_zone_id
+      delete payload.next_line_id
+      const { error: retryError } = await supabase.from('story_choices').insert(payload)
+      if (retryError) throw retryError
+      revalidatePath(PATH)
+      return
+    }
+    throw error
+  }
+  revalidatePath(PATH)
+}
+
+export async function updateChoice(id: string, formData: FormData) {
+  const data = Object.fromEntries(formData.entries())
+  const payload: Record<string, unknown> = {
+    label: data.label,
+    next_scene_id: data.next_scene_id || null,
+    next_line_id: data.next_line_id || null,
+    unlock_zone_id: data.unlock_zone_id || null,
+    reward_xp: Number(data.reward_xp) || 0,
+    reward_item_id: data.reward_item_id || null,
+    reward_qty: Number(data.reward_qty) || 1,
+    sort_order: Number(data.sort_order) || 0,
+  }
+  const { error } = await supabase.from('story_choices').update(payload).eq('id', id)
+  if (error) {
+    if (isMissingColumn(error)) {
+      delete payload.unlock_zone_id
+      delete payload.next_line_id
+      const { error: retryError } = await supabase.from('story_choices').update(payload).eq('id', id)
+      if (retryError) throw retryError
+      revalidatePath(PATH)
+      return
+    }
+    throw error
+  }
   revalidatePath(PATH)
 }
 

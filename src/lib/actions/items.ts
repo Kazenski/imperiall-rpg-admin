@@ -15,8 +15,9 @@ export async function createItem(formData: FormData) {
   if (data.atk) stats.atk = Number(data.atk)
   if (data.def) stats.def = Number(data.def)
   if (data.hp) stats.hp = Number(data.hp)
+  if (data.mp) stats.mp = Number(data.mp)
   if (data.crit) stats.crit = Number(data.crit)
-  delete (data as any).atk; delete (data as any).def; delete (data as any).hp; delete (data as any).crit
+  delete (data as any).atk; delete (data as any).def; delete (data as any).hp; delete (data as any).mp; delete (data as any).crit
 
   const payload = {
     ...data,
@@ -40,8 +41,9 @@ export async function updateItem(id: string, formData: FormData) {
   if (data.atk) stats.atk = Number(data.atk)
   if (data.def) stats.def = Number(data.def)
   if (data.hp) stats.hp = Number(data.hp)
+  if (data.mp) stats.mp = Number(data.mp)
   if (data.crit) stats.crit = Number(data.crit)
-  delete (data as any).atk; delete (data as any).def; delete (data as any).hp; delete (data as any).crit
+  delete (data as any).atk; delete (data as any).def; delete (data as any).hp; delete (data as any).mp; delete (data as any).crit
 
   const payload = {
     ...data,
