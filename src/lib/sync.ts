@@ -5,12 +5,6 @@
  * NEXT_PUBLIC_ (nunca chegam ao navegador):
  *   SUPABASE_PROD_URL / SUPABASE_PROD_SERVICE_KEY
  *   SUPABASE_STAGING_URL / SUPABASE_STAGING_SERVICE_KEY
- *
- * Regras:
- * - refresh: apaga o catálogo do teste e copia tudo do oficial (mesmos ids).
- * - promote: upsert das tabelas escolhidas do teste para o oficial.
- * - Exclusões NÃO propagam (deletar no teste não deleta no oficial).
- * - Não copia perfis, punições nem progresso de jogadores.
  */
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
@@ -37,6 +31,192 @@ export const TABLE_LABELS: Record<string, string> = {
   loot_table_entries: 'Drops', item_upgrade_materials: 'Materiais do upgrade',
 };
 
+/**
+ * SQL Único Acumulado (Migrations 007 a 015 + função exec_sql restrita ao service_role).
+ * 100% idempotente (IF NOT EXISTS). Ao rodar 1 vez no SQL Editor, instala também
+ * `exec_sql` para que as próximas migrations rodem sozinhas pelo botão do Admin!
+ */
+export const CONSOLIDATED_MIGRATIONS_SQL = `-- ============================================================================
+-- PACOTÃO ÚNICO DE MIGRATIONS (007 A 015) + AUTO-MIGRATION VIA PAINEL ADMIN
+-- 100% Idempotente (seguro rodar quantas vezes quiser).
+-- ============================================================================
+
+-- 0. Função restrita ao service_role para o painel /sincronizar aplicar futuras migrations sozinho:
+CREATE OR REPLACE FUNCTION public.exec_sql(sql_query text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  EXECUTE sql_query;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.exec_sql(text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.exec_sql(text) TO service_role;
+
+-- 007: Habilidades por herói + barra de combate
+ALTER TABLE public.player_skills
+  ADD COLUMN IF NOT EXISTS player_character_id uuid REFERENCES public.player_characters (id) ON DELETE CASCADE;
+ALTER TABLE public.player_skills
+  ADD COLUMN IF NOT EXISTS slot smallint;
+ALTER TABLE public.player_skills
+  DROP CONSTRAINT IF EXISTS player_skills_player_id_skill_id_key;
+CREATE UNIQUE INDEX IF NOT EXISTS player_skills_hero_skill_uidx
+  ON public.player_skills (player_character_id, skill_id);
+CREATE UNIQUE INDEX IF NOT EXISTS player_skills_hero_slot_uidx
+  ON public.player_skills (player_character_id, slot) WHERE slot IS NOT NULL;
+CREATE INDEX IF NOT EXISTS player_skills_hero_idx
+  ON public.player_skills (player_character_id);
+
+-- 008: Efeitos visuais de combate + sprites de ataque
+ALTER TABLE public.mobs ADD COLUMN IF NOT EXISTS sprite_attack_url text;
+ALTER TABLE public.skills ADD COLUMN IF NOT EXISTS effect_type text DEFAULT 'slash';
+ALTER TABLE public.skills ADD COLUMN IF NOT EXISTS effect_color text DEFAULT '#FF4444';
+ALTER TABLE public.skills ADD COLUMN IF NOT EXISTS effect_intensity int DEFAULT 1;
+ALTER TABLE public.skills ADD COLUMN IF NOT EXISTS effect_lottie_url text;
+
+-- 009 & 010: Slots de equipamento e desempilhamento de equipáveis
+ALTER TABLE public.player_inventory ADD COLUMN IF NOT EXISTS equip_slot text;
+CREATE INDEX IF NOT EXISTS idx_player_inventory_equip_slot
+  ON public.player_inventory(player_id, equip_slot) WHERE equip_slot IS NOT NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'player_inventory_player_id_item_id_key'
+  ) THEN
+    ALTER TABLE public.player_inventory DROP CONSTRAINT player_inventory_player_id_item_id_key;
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_player_inventory_player_item
+  ON public.player_inventory(player_id, item_id);
+
+-- 011: Menus flutuantes
+CREATE TABLE IF NOT EXISTS public.floating_menus (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  key text NOT NULL UNIQUE,
+  title text NOT NULL,
+  icon text NOT NULL DEFAULT 'missions',
+  sort_order int NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  visible_from timestamptz,
+  visible_until timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.floating_menus ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "floating_menus_public_read" ON public.floating_menus;
+CREATE POLICY "floating_menus_public_read"
+  ON public.floating_menus FOR SELECT TO anon, authenticated USING (true);
+INSERT INTO public.floating_menus (key, title, icon, sort_order, is_active)
+VALUES ('missions', 'Missões', 'missions', 0, true)
+ON CONFLICT (key) DO NOTHING;
+
+-- 012: Pontos de lore nas histórias e por herói
+ALTER TABLE public.player_characters
+  ADD COLUMN IF NOT EXISTS lore_points int NOT NULL DEFAULT 0;
+ALTER TABLE public.stories
+  ADD COLUMN IF NOT EXISTS lore_reward int NOT NULL DEFAULT 0;
+
+-- 013: Progressão de zonas por história e pulo para fala específica
+ALTER TABLE public.zones ADD COLUMN IF NOT EXISTS starter boolean NOT NULL DEFAULT false;
+ALTER TABLE public.story_lines ADD COLUMN IF NOT EXISTS unlock_zone_id uuid
+  REFERENCES public.zones (id) ON DELETE SET NULL;
+ALTER TABLE public.story_choices ADD COLUMN IF NOT EXISTS unlock_zone_id uuid
+  REFERENCES public.zones (id) ON DELETE SET NULL;
+ALTER TABLE public.story_choices ADD COLUMN IF NOT EXISTS next_line_id uuid
+  REFERENCES public.story_lines (id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS public.player_unlocks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_id uuid NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+  player_character_id uuid REFERENCES public.player_characters (id) ON DELETE CASCADE,
+  zone_id uuid NOT NULL REFERENCES public.zones (id) ON DELETE CASCADE,
+  unlocked_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (player_id, player_character_id, zone_id)
+);
+CREATE INDEX IF NOT EXISTS unlocks_player_idx
+  ON public.player_unlocks (player_id, player_character_id);
+ALTER TABLE public.player_unlocks ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "unlocks_self_crud" ON public.player_unlocks;
+CREATE POLICY "unlocks_self_crud"
+  ON public.player_unlocks FOR ALL TO authenticated
+  USING (auth.uid() = player_id) WITH CHECK (auth.uid() = player_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.player_unlocks TO authenticated;
+
+-- 014: Oficina (Chance Base nas Receitas/Upgrades, Upgrade Level e Profissões por Herói)
+ALTER TABLE public.recipes ADD COLUMN IF NOT EXISTS base_chance integer NOT NULL DEFAULT 70;
+ALTER TABLE public.item_upgrade_levels ADD COLUMN IF NOT EXISTS base_chance integer NOT NULL DEFAULT 80;
+ALTER TABLE public.player_inventory ADD COLUMN IF NOT EXISTS upgrade_level integer NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS public.player_professions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_id uuid NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+  player_character_id uuid REFERENCES public.player_characters (id) ON DELETE CASCADE,
+  profession_id uuid NOT NULL REFERENCES public.professions (id) ON DELETE CASCADE,
+  level integer NOT NULL DEFAULT 1,
+  xp integer NOT NULL DEFAULT 0,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (player_id, player_character_id, profession_id)
+);
+CREATE INDEX IF NOT EXISTS player_professions_hero_idx
+  ON public.player_professions (player_id, player_character_id);
+ALTER TABLE public.player_professions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "player_professions_self_crud" ON public.player_professions;
+CREATE POLICY "player_professions_self_crud"
+  ON public.player_professions FOR ALL TO authenticated
+  USING (auth.uid() = player_id) WITH CHECK (auth.uid() = player_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.player_professions TO authenticated;
+
+-- 015: MP (Pontos de Magia) nos Heróis + Constelações por Herói
+ALTER TABLE public.characters ADD COLUMN IF NOT EXISTS mp integer NOT NULL DEFAULT 50;
+
+CREATE TABLE IF NOT EXISTS public.constellation_nodes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  character_id uuid NOT NULL REFERENCES public.characters (id) ON DELETE CASCADE,
+  title text NOT NULL DEFAULT 'Estrela',
+  x numeric(6,2) NOT NULL DEFAULT 50,
+  y numeric(6,2) NOT NULL DEFAULT 50,
+  cost_orbs integer NOT NULL DEFAULT 1,
+  orb_item_id uuid REFERENCES public.items (id) ON DELETE SET NULL,
+  reset_item_id uuid REFERENCES public.items (id) ON DELETE SET NULL,
+  is_start boolean NOT NULL DEFAULT false,
+  color text NOT NULL DEFAULT '#0ea5e9',
+  required_level integer NOT NULL DEFAULT 1,
+  required_story_id uuid REFERENCES public.stories (id) ON DELETE SET NULL,
+  required_zone_id uuid REFERENCES public.zones (id) ON DELETE SET NULL,
+  bonuses jsonb NOT NULL DEFAULT '{}'::jsonb,
+  connections jsonb NOT NULL DEFAULT '[]'::jsonb,
+  sort_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS constellation_nodes_char_idx
+  ON public.constellation_nodes (character_id, sort_order);
+ALTER TABLE public.constellation_nodes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "constellation_nodes_public_read" ON public.constellation_nodes;
+CREATE POLICY "constellation_nodes_public_read"
+  ON public.constellation_nodes FOR SELECT TO anon, authenticated USING (true);
+DROP POLICY IF EXISTS "constellation_nodes_admin_write" ON public.constellation_nodes;
+CREATE POLICY "constellation_nodes_admin_write"
+  ON public.constellation_nodes FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.constellation_nodes TO anon, authenticated;
+
+CREATE TABLE IF NOT EXISTS public.player_constellation_nodes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_id uuid NOT NULL REFERENCES public.profiles (id) ON DELETE CASCADE,
+  player_character_id uuid REFERENCES public.player_characters (id) ON DELETE CASCADE,
+  node_id uuid NOT NULL REFERENCES public.constellation_nodes (id) ON DELETE CASCADE,
+  unlocked_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (player_id, player_character_id, node_id)
+);
+CREATE INDEX IF NOT EXISTS player_constellation_hero_idx
+  ON public.player_constellation_nodes (player_id, player_character_id);
+ALTER TABLE public.player_constellation_nodes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "player_constellation_self_crud" ON public.player_constellation_nodes;
+CREATE POLICY "player_constellation_self_crud"
+  ON public.player_constellation_nodes FOR ALL TO authenticated
+  USING (auth.uid() = player_id) WITH CHECK (auth.uid() = player_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.player_constellation_nodes TO authenticated;
+`;
+
 function serviceClient(url?: string, key?: string): SupabaseClient {
   if (!url || !key) {
     throw new Error(
@@ -45,12 +225,10 @@ function serviceClient(url?: string, key?: string): SupabaseClient {
       '(sem prefixo NEXT_PUBLIC_) e faça redeploy.',
     );
   }
-  // Barra final na URL quebra as chamadas (/rest vira //rest).
   const cleanUrl = url.trim().replace(/\/+$/, '');
   return createClient(cleanUrl, key.trim(), { auth: { persistSession: false } });
 }
 
-/** Mensagem de erro com o máximo de detalhe disponível (sem vazar chaves). */
 function errMsg(prefix: string, error: any): string {
   const parts = [
     error?.message,
@@ -62,6 +240,20 @@ function errMsg(prefix: string, error: any): string {
   return `${prefix}: ${detail}`;
 }
 
+function isMissingTableOrColumn(error: any): boolean {
+  const code = error?.code || '';
+  const msg = (error?.message || '').toLowerCase();
+  return (
+    code === '42P01' ||
+    code === '42703' ||
+    code === 'PGRST204' ||
+    code === 'PGRST205' ||
+    msg.includes('does not exist') ||
+    msg.includes('schema cache') ||
+    msg.includes('column')
+  );
+}
+
 export function getSyncClients() {
   return {
     prod: serviceClient(process.env.SUPABASE_PROD_URL, process.env.SUPABASE_PROD_SERVICE_KEY),
@@ -69,12 +261,47 @@ export function getSyncClients() {
   };
 }
 
+/** Tenta aplicar o SQL consolidado via RPC `exec_sql` nos dois bancos (se instalado). */
+export async function applyMigrationsRpc(target: 'prod' | 'staging' | 'both' = 'both'): Promise<{
+  prodOk: boolean;
+  stagOk: boolean;
+  detail: string;
+}> {
+  const { prod, stag } = getSyncClients();
+  let prodOk = true;
+  let stagOk = true;
+  const msgs: string[] = [];
+
+  if (target === 'prod' || target === 'both') {
+    const { error } = await prod.rpc('exec_sql', { sql_query: CONSOLIDATED_MIGRATIONS_SQL });
+    if (error) {
+      prodOk = false;
+      msgs.push(`Oficial: ${error.message}`);
+    } else {
+      msgs.push('Oficial: estrutura (007–015) aplicada com sucesso!');
+    }
+  }
+  if (target === 'staging' || target === 'both') {
+    const { error } = await stag.rpc('exec_sql', { sql_query: CONSOLIDATED_MIGRATIONS_SQL });
+    if (error) {
+      stagOk = false;
+      msgs.push(`Teste: ${error.message}`);
+    } else {
+      msgs.push('Teste: estrutura (007–015) aplicada com sucesso!');
+    }
+  }
+  return { prodOk, stagOk, detail: msgs.join(' | ') };
+}
+
 async function readAll(client: SupabaseClient, table: string) {
   const rows: any[] = [];
   let offset = 0;
   for (;;) {
     const { data, error } = await client.from(table).select('*').range(offset, offset + 999);
-    if (error) throw new Error(errMsg(`leitura ${table}`, error));
+    if (error) {
+      if (isMissingTableOrColumn(error)) return [];
+      throw new Error(errMsg(`leitura ${table}`, error));
+    }
     rows.push(...(data ?? []));
     if (!data || data.length < 1000) break;
     offset += 1000;
@@ -84,12 +311,16 @@ async function readAll(client: SupabaseClient, table: string) {
 
 async function wipe(client: SupabaseClient, table: string) {
   const { error } = await client.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  if (error) throw new Error(errMsg(`limpeza ${table}`, error));
+  if (error && !isMissingTableOrColumn(error)) {
+    throw new Error(errMsg(`limpeza ${table}`, error));
+  }
 }
 
 /** Copia tudo do oficial para o teste (apaga o teste antes). */
 export async function refreshStaging(): Promise<{ table: string; rows: number }[]> {
   const { prod, stag } = getSyncClients();
+  // Tenta garantir as migrations no staging caso exec_sql exista
+  await stag.rpc('exec_sql', { sql_query: CONSOLIDATED_MIGRATIONS_SQL }).then(() => {}, () => {});
   for (const t of [...SYNC_TABLES].reverse()) await wipe(stag, t);
   const out: { table: string; rows: number }[] = [];
   for (const t of SYNC_TABLES) {
@@ -103,6 +334,8 @@ export async function refreshStaging(): Promise<{ table: string; rows: number }[
 /** Promove tabelas escolhidas do teste para o oficial (upsert por id). */
 export async function promoteTables(tables: string[]): Promise<{ table: string; rows: number }[]> {
   const { prod, stag } = getSyncClients();
+  // Se a função exec_sql já foi instalada no oficial, aplica automaticamente qualquer coluna/tabela nova antes de copiar!
+  await prod.rpc('exec_sql', { sql_query: CONSOLIDATED_MIGRATIONS_SQL }).then(() => {}, () => {});
   const ordered = SYNC_TABLES.filter((t) => tables.includes(t));
   const out: { table: string; rows: number }[] = [];
   for (const t of ordered) {
@@ -113,8 +346,6 @@ export async function promoteTables(tables: string[]): Promise<{ table: string; 
   return out;
 }
 
-/** Diagnóstico bruto: tenta alcançar cada banco e relata status/corpo.
- * Não expõe chaves — mostra só o host e o retorno. */
 export async function diagnose(): Promise<
   { side: string; host: string; ok: boolean; detail: string }[]
 > {
@@ -154,24 +385,31 @@ export async function diagnose(): Promise<
   }
   return out;
 }
-export async function diffCounts(): Promise<{ table: string; prod: number; staging: number }[]> {
+
+export async function diffCounts(): Promise<{ table: string; prod: number; staging: number; missingInProd?: boolean }[]> {
   const { prod, stag } = getSyncClients();
-  const out: { table: string; prod: number; staging: number }[] = [];
+  const out: { table: string; prod: number; staging: number; missingInProd?: boolean }[] = [];
   for (const t of SYNC_TABLES) {
     const [p, s] = await Promise.all([
       prod.from(t).select('id', { count: 'exact', head: true }),
       stag.from(t).select('id', { count: 'exact', head: true }),
     ]);
-    if (p.error) throw new Error(errMsg(`oficial ${t}`, p.error));
-    if (s.error) throw new Error(errMsg(`teste ${t}`, s.error));
-    out.push({ table: t, prod: p.count ?? 0, staging: s.count ?? 0 });
+    const prodMissing = Boolean(p.error && isMissingTableOrColumn(p.error));
+    const stagMissing = Boolean(s.error && isMissingTableOrColumn(s.error));
+    if (p.error && !prodMissing) throw new Error(errMsg(`oficial ${t}`, p.error));
+    if (s.error && !stagMissing) throw new Error(errMsg(`teste ${t}`, s.error));
+    out.push({
+      table: t,
+      prod: prodMissing ? 0 : (p.count ?? 0),
+      staging: stagMissing ? 0 : (s.count ?? 0),
+      missingInProd: prodMissing,
+    });
   }
   return out;
 }
 
 async function insertRows(client: SupabaseClient, table: string, rows: any[], upsert = false) {
   if (rows.length === 0) return;
-  // skill_nodes tem auto-referência: insere sem o pré-requisito e ajusta depois.
   let fixups: { id: string; requires_node_id: string }[] = [];
   let payload = rows;
   if (table === 'skill_nodes') {
@@ -182,7 +420,20 @@ async function insertRows(client: SupabaseClient, table: string, rows: any[], up
     ? client.from(table).upsert(payload, { onConflict: 'id' })
     : client.from(table).insert(payload);
   const { error } = await query;
-  if (error) throw new Error(errMsg(`gravação ${table}`, error));
+  if (error) {
+    // Se o oficial ainda não tiver alguma coluna nova do teste, remove a coluna ausente e grava o restante sem quebrar!
+    const match = (error.message || '').match(/Could not find the '([^']+)' column/i);
+    if (match && match[1]) {
+      const missingCol = match[1];
+      const stripped = payload.map((row) => {
+        const copy = { ...row };
+        delete copy[missingCol];
+        return copy;
+      });
+      return insertRows(client, table, stripped, upsert);
+    }
+    throw new Error(errMsg(`gravação ${table}`, error));
+  }
   for (const f of fixups) {
     const { error: uErr } = await client.from(table).update({ requires_node_id: f.requires_node_id }).eq('id', f.id);
     if (uErr) throw new Error(errMsg(`ajuste ${table}`, uErr));
