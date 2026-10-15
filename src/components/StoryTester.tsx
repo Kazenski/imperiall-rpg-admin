@@ -117,6 +117,17 @@ export function StoryTester({
     if (c.unlock_zone_id) {
       registerUnlock(c.unlock_zone_id)
     }
+    if (c.next_line_id) {
+      for (let sIdx = 0; sIdx < scenes.length; sIdx++) {
+        const ls = linesByScene[scenes[sIdx].id] || []
+        const lIdx = ls.findIndex((l: any) => l.id === c.next_line_id)
+        if (lIdx >= 0) {
+          setSi(sIdx)
+          setLi(lIdx)
+          return
+        }
+      }
+    }
     if (c.next_scene_id) {
       const pos = scenePos(c.next_scene_id)
       if (pos >= 0) {
@@ -151,7 +162,18 @@ export function StoryTester({
     npcs.find((n) => n.id === l?.npc_id)?.portrait_url ||
     null
 
-  const targetSceneLabel = (sceneId?: string | null) => {
+  const targetChoiceLabel = (c: any) => {
+    if (c?.next_line_id) {
+      for (const sc of scenes) {
+        const ls = linesByScene[sc.id] || []
+        const found = ls.find((l: any) => l.id === c.next_line_id)
+        if (found) {
+          return `Fala #${found.order_index} (${sc.title || `Cena #${sc.order_index}`})`
+        }
+      }
+      return `Fala …${String(c.next_line_id).slice(0, 8)}`
+    }
+    const sceneId = c?.next_scene_id
     if (!sceneId) return 'continua'
     const target = scenes.find((s) => s.id === sceneId)
     return target
@@ -390,7 +412,7 @@ export function StoryTester({
                             </span>
                           )}
                           <span className="text-zinc-400">
-                            → {targetSceneLabel(c.next_scene_id)}
+                            → {targetChoiceLabel(c)}
                           </span>
                         </span>
                       </button>

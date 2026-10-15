@@ -18,9 +18,11 @@ ALTER TABLE zones ADD COLUMN IF NOT EXISTS starter boolean NOT NULL DEFAULT fals
 ALTER TABLE story_lines ADD COLUMN IF NOT EXISTS unlock_zone_id uuid
   REFERENCES public.zones (id) ON DELETE SET NULL;
 
--- 3. Escolha que, clicada, libera zona (ou NULL = nenhuma).
+-- 3. Escolha que, clicada, libera zona (ou NULL = nenhuma) e pode pular p/ fala específica.
 ALTER TABLE story_choices ADD COLUMN IF NOT EXISTS unlock_zone_id uuid
   REFERENCES public.zones (id) ON DELETE SET NULL;
+ALTER TABLE story_choices ADD COLUMN IF NOT EXISTS next_line_id uuid
+  REFERENCES public.story_lines (id) ON DELETE SET NULL;
 
 -- 4. Desbloqueios por herói (uma linha por herói+zona).
 CREATE TABLE IF NOT EXISTS player_unlocks (

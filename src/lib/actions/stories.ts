@@ -167,6 +167,7 @@ export async function createChoice(formData: FormData) {
   const payload: Record<string, unknown> = {
     line_id: data.line_id, label: data.label,
     next_scene_id: data.next_scene_id || null,
+    next_line_id: data.next_line_id || null,
     unlock_zone_id: data.unlock_zone_id || null,
     reward_xp: Number(data.reward_xp) || 0,
     reward_item_id: data.reward_item_id || null,
@@ -177,6 +178,7 @@ export async function createChoice(formData: FormData) {
   if (error) {
     if (isMissingColumn(error)) {
       delete payload.unlock_zone_id
+      delete payload.next_line_id
       const { error: retryError } = await supabase.from('story_choices').insert(payload)
       if (retryError) throw retryError
       revalidatePath(PATH)
@@ -192,6 +194,7 @@ export async function updateChoice(id: string, formData: FormData) {
   const payload: Record<string, unknown> = {
     label: data.label,
     next_scene_id: data.next_scene_id || null,
+    next_line_id: data.next_line_id || null,
     unlock_zone_id: data.unlock_zone_id || null,
     reward_xp: Number(data.reward_xp) || 0,
     reward_item_id: data.reward_item_id || null,
@@ -202,6 +205,7 @@ export async function updateChoice(id: string, formData: FormData) {
   if (error) {
     if (isMissingColumn(error)) {
       delete payload.unlock_zone_id
+      delete payload.next_line_id
       const { error: retryError } = await supabase.from('story_choices').update(payload).eq('id', id)
       if (retryError) throw retryError
       revalidatePath(PATH)
