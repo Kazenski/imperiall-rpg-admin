@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Lottie } from 'lottie-react'
 
 export interface SkillVisualEffect {
@@ -26,19 +26,21 @@ export const EFFECT_TYPES: Record<
   dark: { label: 'Trevas', icon: '🌑', color: '#6B21A8' },
 }
 
-// Efeitos PRONTOS (LottieFiles, gratuitos). Funcionam sem upload.
-// Se a skill tiver effect_lottie_url, ele tem prioridade sobre estes.
-export const READY_MADE_LOTTIE: Record<string, string> = {
-  slash: 'https://assets9.lottiefiles.com/packages/lf20_u4yrau.json',
-  fire: 'https://assets9.lottiefiles.com/packages/lf20_bq33rmco.json',
-  ice: 'https://assets9.lottiefiles.com/packages/lf20_tll0jwrk.json',
-  heal: 'https://assets9.lottiefiles.com/packages/lf20_jgf0seun.json',
-  poison: 'https://assets9.lottiefiles.com/packages/lf20_8phcqmgf.json',
-  lightning: 'https://assets9.lottiefiles.com/packages/lf20_wdlrto6v.json',
-  buff: 'https://assets9.lottiefiles.com/packages/lf20_ys68rd9v.json',
-  debuff: 'https://assets9.lottiefiles.com/packages/lf20_8qsvylvq.json',
-  arcane: 'https://assets9.lottiefiles.com/packages/lf20_u4yrau.json',
-  dark: 'https://assets9.lottiefiles.com/packages/lf20_9bs4dz7x.json',
+function prand(seed: number) {
+  let x = (seed * 2654435761) >>> 0
+  x ^= x >>> 15
+  x = (x * 2246822519) >>> 0
+  x ^= x >>> 13
+  return (x % 10000) / 10000
+}
+
+function hexA(hex: string, a: number) {
+  let h = hex.replace('#', '')
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `rgba(${r},${g},${b},${Math.max(0, Math.min(1, a)).toFixed(3)})`
 }
 
 function useLottieJson(url: string | null) {
@@ -64,7 +66,6 @@ function useLottieJson(url: string | null) {
       alive = false
     }
   }, [url])
-  // Só vale o JSON da URL atual; ao trocar de tipo, volta ao loading.
   const data = loaded && loaded.url === url ? loaded.json : null
   const failed = !url || failedUrl === url
   return { data, failed }
@@ -83,15 +84,16 @@ export function EffectPreview({
   effectColor,
   effectLottieUrl,
   effectIntensity = 1,
-  size = 96,
+  size = 120,
 }: EffectPreviewProps) {
   const meta = EFFECT_TYPES[effectType] || EFFECT_TYPES.slash
   const color = effectColor || meta.color
   const url =
     effectLottieUrl && effectLottieUrl.trim()
       ? effectLottieUrl.trim()
-      : READY_MADE_LOTTIE[effectType]
-  const { data, failed } = useLottieJson(url || null)
+      : null
+  const { data, failed } = useLottieJson(url)
+  const intensity = Math.max(1, Math.min(3, Number(effectIntensity) || 1))
 
   return (
     <div
@@ -109,41 +111,41 @@ export function EffectPreview({
           borderRadius: 12,
           backgroundColor: '#0A0F18',
           border: `2px solid ${color}`,
-          boxShadow: `0 0 ${8 * effectIntensity}px ${color}66`,
+          boxShadow: `0 0 ${8 * intensity}px ${hexA(color, 0.4)}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
         }}
       >
-        {data && !failed ? (
-          <Lottie
-            key={url}
-            src={data}
-            autoplay
-            style={{ width: size, height: size }}
-          />
+        {url ? (
+          data && !failed ? (
+            <Lottie
+              key={url}
+              src={data}
+              autoplay
+              style={{ width: size, height: size }}
+            />
+          ) : (
+            <span style={{ fontSize: 12, color: '#94A3B8' }}>
+              {failed ? 'Lottie inválido' : 'carregando…'}
+            </span>
+          )
         ) : (
-          <FallbackGlyph
-            icon={meta.icon}
+          <BurstCanvas
+            type={effectType}
             color={color}
-            intensity={effectIntensity}
+            intensity={intensity}
             size={size}
-            loading={!failed}
           />
         )}
       </div>
-      <div
-        style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center' }}
-      >
-        {failed || !data ? (
-          <>
-            fallback nativo (sem Lottie) • {meta.label} • nível{' '}
-            {effectIntensity}
-          </>
+      <div style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center' }}>
+        {url ? (
+          <>{meta.label} • nível {intensity} • Lottie próprio</>
         ) : (
           <>
-            {meta.label} • nível {effectIntensity} • Lottie OK
+            {meta.label} • nível {intensity} • efeito do jogo
           </>
         )}
       </div>
@@ -151,44 +153,274 @@ export function EffectPreview({
   )
 }
 
-function FallbackGlyph({
-  icon,
+// Mesmo efeito do jogo, desenhado em Canvas (espelho simplificado do
+// _EffectBurstPainter do app). Roda em loop para avaliação visual.
+function BurstCanvas({
+  type,
   color,
   intensity,
   size,
-  loading,
 }: {
-  icon: string
+  type: string
   color: string
   intensity: number
   size: number
-  loading: boolean
 }) {
-  const scale = 1 + (intensity - 1) * 0.25
-  return (
-    <div
-      style={{
-        width: size * 0.6,
-        height: size * 0.6,
-        borderRadius: '50%',
-        border: `2px solid ${color}`,
-        backgroundColor: color + '33',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: size * 0.3 * scale,
-        animation: loading
-          ? 'effect-pulse 1s ease-in-out infinite'
-          : 'effect-pop 0.6s ease-out',
-      }}
-    >
-      {icon}
-      <style>{`
-        @keyframes effect-pulse { 0%,100% { transform: scale(1); opacity: .7; } 50% { transform: scale(1.15); opacity: 1; } }
-        @keyframes effect-pop { 0% { transform: scale(.3); opacity: 0; } 60% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
-      `}</style>
-    </div>
-  )
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = ref.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    canvas.width = size * dpr
+    canvas.height = size * dpr
+    ctx.scale(dpr, dpr)
+    const duration = intensity === 1 ? 700 : intensity === 2 ? 1000 : 1300
+    let raf = 0
+    const t0 = performance.now()
+    const draw = (now: number) => {
+      const p = ((now - t0) % (duration + 350)) / duration
+      paintBurst(ctx, size, type, color, intensity, Math.min(1, p))
+      raf = requestAnimationFrame(draw)
+    }
+    raf = requestAnimationFrame(draw)
+    return () => cancelAnimationFrame(raf)
+  }, [type, color, intensity, size])
+  return <canvas ref={ref} style={{ width: size, height: size }} />
+}
+
+function paintBurst(
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  type: string,
+  color: string,
+  intensity: number,
+  p: number,
+) {
+  const c = size / 2
+  const maxR = size / 2 - 4
+  const extra = intensity - 1
+  ctx.clearRect(0, 0, size, size)
+
+  const spark = (x: number, y: number, r: number, a: number, col: string) => {
+    if (a <= 0.01 || r <= 0) return
+    ctx.beginPath()
+    ctx.arc(x, y, r * 2.2, 0, Math.PI * 2)
+    ctx.fillStyle = hexA(col, a * 0.35)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fillStyle = `rgba(255,255,255,${Math.max(0, Math.min(1, a))})`
+    ctx.fill()
+  }
+  const ring = (
+    r: number,
+    a: number,
+    w: number,
+    col: string = color,
+    delay = 0,
+  ) => {
+    const lp = Math.max(0, Math.min(1, (p - delay) / (1 - delay)))
+    if (lp <= 0 || lp >= 1) return
+    ctx.beginPath()
+    ctx.arc(c, c, maxR * (0.15 + lp * 0.85), 0, Math.PI * 2)
+    ctx.strokeStyle = hexA(col, (1 - lp) * 0.9 * a)
+    ctx.lineWidth = w * (1 - lp) + 1
+    ctx.stroke()
+  }
+
+  // Clarão.
+  const fa = Math.pow(1 - p, 3) * 0.85
+  if (fa > 0.01) {
+    ctx.beginPath()
+    ctx.arc(c, c, maxR * (0.35 + p * 0.45), 0, Math.PI * 2)
+    ctx.fillStyle = `rgba(255,255,255,${fa})`
+    ctx.fill()
+  }
+  // Glow.
+  ctx.beginPath()
+  ctx.arc(c, c, maxR * 0.95, 0, Math.PI * 2)
+  ctx.fillStyle = hexA(color, (1 - p) * 0.25)
+  ctx.fill()
+
+  if (type === 'slash') {
+    const sweep = p * 4.2
+    ctx.beginPath()
+    ctx.arc(c, c, maxR * 0.72, -2.4, -2.4 + sweep)
+    ctx.strokeStyle = `rgba(255,255,255,${1 - p})`
+    ctx.lineWidth = 10 * (1 - p) + 3
+    ctx.lineCap = 'round'
+    ctx.stroke()
+    const tipA = -2.4 + sweep
+    const tx = c + Math.cos(tipA) * maxR * 0.72
+    const ty = c + Math.sin(tipA) * maxR * 0.72
+    for (let i = 0; i < 5 + extra * 3; i++) {
+      const a = tipA + (prand(i * 7 + 1) - 0.5) * 1.6
+      const d = p * maxR * (0.3 + prand(i * 13 + 2) * 0.7)
+      spark(tx + Math.cos(a) * d, ty + Math.sin(a) * d, 3.5 - p * 2, (1 - p) * 0.9, color)
+    }
+  } else if (type === 'fire') {
+    const n = 9 + extra * 4
+    for (let i = 0; i < n; i++) {
+      const fx = (prand(i * 3 + 5) - 0.5) * maxR * 1.1
+      const rise = p * maxR * (0.9 + prand(i * 11 + 6) * 0.9)
+      const flick = Math.sin(p * 20 + i * 2.4) * maxR * 0.06
+      const t = Math.min(1, rise / (maxR * 1.6))
+      const col = t < 0.35 ? '#FFE082' : t < 0.7 ? '#FF9E40' : '#E53935'
+      ctx.beginPath()
+      ctx.arc(c + fx + flick, c + maxR * 0.45 - rise, maxR * 0.16 * (1 - t * 0.7) + 2, 0, Math.PI * 2)
+      ctx.fillStyle = hexA(col, (1 - p * 0.7) * 0.9)
+      ctx.fill()
+    }
+    ring(maxR, 1, 6, '#FF6B35')
+  } else if (type === 'ice') {
+    const n = 6 + extra * 2
+    for (let i = 0; i < n; i++) {
+      const a = ((2 * Math.PI * i) / n + 0.4) + p * 1.5
+      const d = maxR * (0.15 + p * 0.85)
+      const x = c + Math.cos(a) * d
+      const y = c + Math.sin(a) * d
+      const s = maxR * 0.14 * (1 - p * 0.5)
+      ctx.save()
+      ctx.translate(x, y)
+      ctx.rotate(a)
+      ctx.beginPath()
+      ctx.moveTo(0, -s)
+      ctx.lineTo(s * 0.45, 0)
+      ctx.lineTo(0, s)
+      ctx.lineTo(-s * 0.45, 0)
+      ctx.closePath()
+      ctx.fillStyle = hexA('#B3E5FC', (1 - p) * 0.95)
+      ctx.fill()
+      ctx.restore()
+    }
+    ring(maxR, 1, 4, '#B3E5FC')
+  } else if (type === 'heal') {
+    ring(maxR, 1, 5, '#34D399')
+    ring(maxR, 1, 3, '#34D399', 0.25)
+    const n = 6 + extra * 3
+    ctx.strokeStyle = `rgba(255,255,255,${1 - p})`
+    ctx.lineWidth = 4
+    ctx.lineCap = 'round'
+    for (let i = 0; i < n; i++) {
+      const fx = (prand(i * 29 + 2) - 0.5) * maxR * 1.2
+      const y = c + maxR * 0.4 - p * maxR * (1.0 + prand(i * 13 + 7) * 0.6)
+      const s = maxR * 0.09
+      if (i % 2 === 0) {
+        ctx.beginPath()
+        ctx.moveTo(c + fx - s, y)
+        ctx.lineTo(c + fx + s, y)
+        ctx.moveTo(c + fx, y - s)
+        ctx.lineTo(c + fx, y + s)
+        ctx.stroke()
+      } else {
+        spark(c + fx, y, 3.5, 1 - p * 0.8, '#34D399')
+      }
+    }
+  } else if (type === 'poison') {
+    const n = 7 + extra * 3
+    for (let i = 0; i < n; i++) {
+      const fx = (prand(i * 31 + 1) - 0.5) * maxR
+      const y = c + maxR * 0.5 - p * maxR * (1.1 + prand(i * 17 + 5) * 0.7)
+      const x = c + fx + Math.sin(p * 8 + i * 1.7) * maxR * 0.1
+      const r = maxR * (0.05 + prand(i * 7 + 11) * 0.08)
+      ctx.beginPath()
+      ctx.arc(x, y, r, 0, Math.PI * 2)
+      ctx.strokeStyle = hexA('#76FF03', (1 - p) * 0.85)
+      ctx.lineWidth = 2.5
+      ctx.stroke()
+    }
+  } else if (type === 'lightning') {
+    const flicker = (Math.sin(p * 60) * 0.5 + 0.5) * 0.4 + 0.6
+    const bolt = (x0: number, y0: number, x1: number, y1: number, w: number, col: string, a: number, seed: number) => {
+      ctx.beginPath()
+      ctx.moveTo(x0, y0)
+      for (let i = 1; i <= 7; i++) {
+        const t = i / 7
+        const off = i === 7 ? 0 : (prand(seed + i * 37) - 0.5) * 2 * maxR * 0.16
+        ctx.lineTo(x0 + (x1 - x0) * t + off, y0 + (y1 - y0) * t + off * 0.5)
+      }
+      ctx.strokeStyle = hexA(col, a)
+      ctx.lineWidth = w
+      ctx.lineCap = 'round'
+      ctx.stroke()
+    }
+    bolt(c, c - maxR * 0.9, c, c + maxR * 0.9, 10, '#FBBF24', (1 - p) * flicker * 0.6, 50)
+    bolt(c, c - maxR * 0.9, c, c + maxR * 0.9, 5, '#FFFFFF', (1 - p) * flicker, 100)
+  } else if (type === 'buff') {
+    ring(maxR, 1, 4, '#FFD54F')
+    ctx.strokeStyle = hexA('#FFD54F', (1 - p) * 0.9)
+    ctx.lineWidth = 4
+    ctx.lineCap = 'round'
+    const n = 2 + extra
+    for (let i = 0; i < n; i++) {
+      const fx = (i - (n - 1) / 2) * maxR * 0.4
+      const y = c + maxR * 0.3 - p * maxR * 1.2
+      const s = maxR * 0.14
+      ctx.beginPath()
+      ctx.moveTo(c + fx - s, y + s * 0.6)
+      ctx.lineTo(c + fx, y - s * 0.6)
+      ctx.lineTo(c + fx + s, y + s * 0.6)
+      ctx.stroke()
+    }
+  } else if (type === 'debuff') {
+    ctx.beginPath()
+    ctx.arc(c, c, maxR * (1.0 - p * 0.55), 0, Math.PI * 2)
+    ctx.strokeStyle = hexA('#EF5350', (1 - p * 0.5) * 0.9)
+    ctx.lineWidth = 5
+    ctx.stroke()
+    ctx.strokeStyle = hexA('#EF5350', (1 - p) * 0.9)
+    ctx.lineWidth = 4
+    const n = 2 + extra
+    for (let i = 0; i < n; i++) {
+      const fx = (i - (n - 1) / 2) * maxR * 0.4
+      const y = c - maxR * 0.5 + p * maxR * 1.2
+      const s = maxR * 0.14
+      ctx.beginPath()
+      ctx.moveTo(c + fx - s, y - s * 0.6)
+      ctx.lineTo(c + fx, y + s * 0.6)
+      ctx.lineTo(c + fx + s, y - s * 0.6)
+      ctx.stroke()
+    }
+  } else if (type === 'dark') {
+    const n = 10 + extra * 5
+    for (let i = 0; i < n; i++) {
+      const a = ((2 * Math.PI * i) / n) + p * 1.2
+      const r1 = maxR * (1.0 - p) * 0.9 + maxR * 0.1
+      spark(c + Math.cos(a) * r1, c + Math.sin(a) * r1, 3, 1 - p, color)
+    }
+    ctx.beginPath()
+    ctx.arc(c, c, maxR * (0.55 - p * 0.3), 0, Math.PI * 2)
+    ctx.fillStyle = `rgba(0,0,0,${(1 - p) * 0.75})`
+    ctx.fill()
+  } else {
+    // arcane
+    ring(maxR, 1, 4, color, 0.15)
+    ctx.strokeStyle = hexA('#FFFFFF', (1 - p) * 0.9)
+    ctx.lineWidth = 2.5
+    for (let k = 0; k < 2; k++) {
+      const rot = p * (k === 0 ? 1.5 : -1.1) + k * 0.5
+      const points = k === 0 ? 5 : 3
+      ctx.beginPath()
+      for (let i = 0; i <= points * 2; i++) {
+        const a = rot + ((2 * Math.PI * i) / (points * 2))
+        const r = (i % 2 === 0 ? maxR * 0.55 : maxR * 0.25) * (1 - p * 0.3)
+        const x = c + Math.cos(a) * r
+        const y = c + Math.sin(a) * r
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.closePath()
+      ctx.stroke()
+    }
+    const n = 3 + extra * 2
+    for (let i = 0; i < n; i++) {
+      const a = ((2 * Math.PI * i) / n) - p * 3.5
+      const r = maxR * (0.7 - p * 0.25)
+      spark(c + Math.cos(a) * r, c + Math.sin(a) * r, 4, 1 - p * 0.6, color)
+    }
+  }
 }
 
 const labelStyle: React.CSSProperties = {
@@ -317,7 +549,7 @@ export function SkillEffectFields({
 
         <div style={{ marginTop: 12 }}>
           <label style={labelStyle}>
-            URL Lottie (opcional — vazio usa o pronto)
+            URL Lottie (opcional — vazio usa o efeito do jogo)
           </label>
           <input
             type="url"
@@ -336,7 +568,7 @@ export function SkillEffectFields({
           effectColor={value.effect_color || meta.color}
           effectLottieUrl={value.effect_lottie_url}
           effectIntensity={Number(value.effect_intensity || 1)}
-          size={120}
+          size={140}
         />
       </div>
     </div>
