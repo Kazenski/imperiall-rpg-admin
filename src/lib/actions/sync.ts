@@ -1,6 +1,6 @@
 'use server'
 
-import { diffCounts, refreshStaging, promoteTables, diagnose } from '@/lib/sync';
+import { diffCounts, refreshStaging, promoteTables, diagnose, applyMigrationsRpc } from '@/lib/sync';
 import { revalidatePath } from 'next/cache';
 
 export async function syncDiagnoseAction() {
@@ -35,6 +35,16 @@ export async function syncPromoteAction(tables: string[]) {
     const data = await promoteTables(tables);
     revalidatePath('/sincronizar');
     return { ok: true as const, data };
+  } catch (e: any) {
+    return { ok: false as const, error: e?.message || String(e) };
+  }
+}
+
+export async function syncApplyMigrationsAction(target: 'prod' | 'staging' | 'both' = 'both') {
+  try {
+    const res = await applyMigrationsRpc(target);
+    revalidatePath('/sincronizar');
+    return { ok: true as const, data: res };
   } catch (e: any) {
     return { ok: false as const, error: e?.message || String(e) };
   }
