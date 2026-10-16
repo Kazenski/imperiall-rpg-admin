@@ -50,23 +50,20 @@ export default function ManutencaoPage() {
         }}
         className="border-2 border-amber-500/30 rounded-xl p-5 space-y-3 bg-amber-950/10"
       >
-        <h3 className="font-semibold text-amber-300">Mídia da tela de login (splash)</h3>
+        <h3 className="font-semibold text-amber-300">Mídia da tela de login (capa de inicialização)</h3>
+        <p className="text-xs text-zinc-400">
+          O tipo (imagem ou vídeo) é detectado automaticamente pelo arquivo enviado.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="text-sm">Tipo de mídia</label>
-            <select name="media_type" defaultValue={splash?.capa_inicializacao_tipo || 'image'} className="w-full border rounded px-2.5 py-1.5 bg-background">
-              <option value="image">Imagem</option>
-              <option value="video">Vídeo</option>
-            </select>
-          </div>
           <MediaUpload
             label="Capa de inicialização"
             fieldName="capa_inicializacao_url"
+            typeFieldName="capa_inicializacao_tipo"
             tooltipText="Imagem ou vídeo que aparece na tela de login do app."
             folder="splash"
             value={splashUrl}
             onChange={setSplashUrl}
-            hint="Imagem ou vídeo (MP4/WebM). Máximo 40MB."
+            hint="Imagem ou vídeo (MP4/WebM). Máximo 50MB."
           />
           <MediaUpload
             label="Capa após vídeo (imagem estática)"
@@ -75,7 +72,7 @@ export default function ManutencaoPage() {
             folder="splash"
             value={posterUrl}
             onChange={setPosterUrl}
-            hint="Imagem (PNG/JPG/WEBP). Máximo 40MB."
+            hint="Imagem (PNG/JPG/WEBP). Máximo 50MB."
             accept="image/png,image/jpeg,image/webp,image/gif"
           />
         </div>
@@ -109,21 +106,15 @@ export default function ManutencaoPage() {
           <textarea name="message" required className="w-full border rounded px-2.5 py-1.5 bg-background" rows={3} placeholder="O jogo está em manutenção..." />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="text-sm">Tipo de mídia</label>
-            <select name="media_type" defaultValue="image" className="w-full border rounded px-2.5 py-1.5 bg-background">
-              <option value="image">Imagem</option>
-              <option value="video">Vídeo</option>
-            </select>
-          </div>
           <MediaUpload
             label="Mídia de manutenção"
             fieldName="media_url"
+            typeFieldName="media_type"
             tooltipText="Imagem ou vídeo exibido na tela de manutenção."
             folder="maintenance"
             value={maintenanceMediaUrl}
             onChange={setMaintenanceMediaUrl}
-            hint="Imagem ou vídeo (MP4/WebM). Máximo 40MB."
+            hint="Imagem ou vídeo (MP4/WebM). Máximo 50MB."
           />
         </div>
         <label className="flex items-center gap-2">

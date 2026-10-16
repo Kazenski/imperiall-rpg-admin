@@ -4,6 +4,13 @@ import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
 import { formStrings } from '@/lib/utils/form'
 
+/** Detecta imagem vs video pela extensao da URL. */
+function detectMediaType(url: string | null): 'image' | 'video' {
+  if (!url) return 'image'
+  const clean = url.split('?')[0]
+  return /\.(mp4|webm|mov|m4v|ogv|mkv|avi)$/i.test(clean) ? 'video' : 'image'
+}
+
 const PATH = '/manutencao'
 
 /**
@@ -118,9 +125,12 @@ export async function getSplashConfig() {
 
 export async function updateSplashConfig(formData: FormData) {
   const data = formStrings(formData)
+  const url = data.capa_inicializacao_url || null
+  // Tipo detectado pelo proprio arquivo (imagem vs video), independe do select antigo.
+  const tipo = data.capa_inicializacao_tipo || data.media_type || detectMediaType(url)
   const base = {
-    capa_inicializacao_url: data.capa_inicializacao_url || null,
-    capa_inicializacao_tipo: data.media_type || 'image',
+    capa_inicializacao_url: url,
+    capa_inicializacao_tipo: tipo,
     updated_at: new Date().toISOString(),
   }
   const withPoster = { ...base, capa_inicializacao_poster_url: data.capa_inicializacao_poster_url || null }

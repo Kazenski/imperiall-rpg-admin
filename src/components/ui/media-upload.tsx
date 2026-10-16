@@ -13,6 +13,16 @@ interface MediaUploadProps {
   onChange: (url: string) => void
   hint: string
   accept?: string
+  /** Nome do campo hidden que recebe 'image' ou 'video', detectado pela URL. */
+  typeFieldName?: string
+}
+
+/** Detecta o tipo pela extensão da URL (mp4/webm/mov = vídeo). */
+export function detectMediaType(url: string | null | undefined): 'image' | 'video' {
+  if (!url) return 'image'
+  const clean = url.split('?')[0]
+  if (/\.(mp4|webm|mov|m4v|ogv|mkv|avi)$/i.test(clean)) return 'video'
+  return 'image'
 }
 
 const ACCEPT_ALL = 'image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime'
@@ -32,7 +42,7 @@ function friendlyError(message: string) {
   return message
 }
 
-export function MediaUpload({ label, fieldName, tooltipText, folder, value, onChange, hint, accept = ACCEPT_ALL }: MediaUploadProps) {
+export function MediaUpload({ label, fieldName, tooltipText, folder, value, onChange, hint, accept = ACCEPT_ALL, typeFieldName }: MediaUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -136,6 +146,7 @@ export function MediaUpload({ label, fieldName, tooltipText, folder, value, onCh
       </div>
       {error && <p className="text-xs text-red-600 mt-1 whitespace-pre-wrap">{error}</p>}
       <input type="hidden" name={fieldName} value={value} readOnly className="hidden" />
+      {typeFieldName && <input type="hidden" name={typeFieldName} value={detectMediaType(value)} readOnly className="hidden" />}
     </div>
   )
 }
