@@ -77,8 +77,9 @@ export async function getSplashConfig() {
 export async function updateSplashConfig(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
   const payload = {
-    splash_media_url: data.splash_media_url || null,
-    splash_media_type: data.media_type || 'image',
+    capa_inicializacao_url: data.capa_inicializacao_url || null,
+    capa_inicializacao_tipo: data.media_type || 'image',
+    capa_inicializacao_poster_url: data.capa_inicializacao_poster_url || null,
     updated_at: new Date().toISOString(),
   }
   const { error } = await supabase.from('app_ui_config').update(payload).eq('id', 1)

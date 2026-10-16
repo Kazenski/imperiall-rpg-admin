@@ -15,6 +15,7 @@ export default function ManutencaoPage() {
   const [windows, setWindows] = useState<any[]>([])
   const [splash, setSplash] = useState<any>(null)
   const [splashUrl, setSplashUrl] = useState('')
+  const [posterUrl, setPosterUrl] = useState('')
   const [maintenanceMediaUrl, setMaintenanceMediaUrl] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -25,6 +26,7 @@ export default function ManutencaoPage() {
       setWindows(w || [])
       setSplash(s)
       setSplashUrl(s?.capa_inicializacao_url || '')
+      setPosterUrl(s?.capa_inicializacao_poster_url || '')
     } finally {
       setLoading(false)
     }
@@ -65,6 +67,16 @@ export default function ManutencaoPage() {
             value={splashUrl}
             onChange={setSplashUrl}
             hint="Imagem ou vídeo (MP4/WebM). Máximo 40MB."
+          />
+          <MediaUpload
+            label="Capa após vídeo (imagem estática)"
+            fieldName="capa_inicializacao_poster_url"
+            tooltipText="Opcional: exibida após o vídeo da capa terminar."
+            folder="splash"
+            value={posterUrl}
+            onChange={setPosterUrl}
+            hint="Imagem (PNG/JPG/WEBP). Máximo 40MB."
+            accept="image/png,image/jpeg,image/webp,image/gif"
           />
         </div>
         <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">Salvar mídia de login</button>
