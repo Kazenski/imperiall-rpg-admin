@@ -5,9 +5,11 @@ import { usePathname } from 'next/navigation'
 import {
   Package, Skull, Zap, Map, Waves, Gift, UserCheck, BookOpen,
   Sparkles, Swords, Network, Star, Hammer, Wrench, RefreshCw, Users, HelpCircle,
+  BarChart3,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
+  { href: '/bi', label: 'BI / Dashboard', icon: BarChart3, color: 'text-cyan-300 border-cyan-500/40 bg-cyan-500/10' },
   { href: '/items', label: 'Itens', icon: Package, color: 'text-amber-400 border-amber-500/40 bg-amber-500/10' },
   { href: '/mobs', label: 'Inimigos', icon: Skull, color: 'text-rose-400 border-rose-500/40 bg-rose-500/10' },
   { href: '/skills', label: 'Habilidades', icon: Zap, color: 'text-sky-400 border-sky-500/40 bg-sky-500/10' },
