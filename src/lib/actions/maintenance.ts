@@ -2,20 +2,44 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { formStrings } from '@/lib/utils/form'
 
 const PATH = '/manutencao'
+
+/**
+ * Migrations ainda não aplicadas geram erro 500 na página (React #441).
+ * Aqui a página degradada: se a tabela/coluna não existir, devolvemos vazio
+ * e o admin mostra um aviso em vez de quebrar o site inteiro.
+ */
+function isMissing(error: any) {
+  const code = error?.code || ''
+  const msg = (error?.message || '').toLowerCase()
+  return (
+    code === '42703' || // undefined_column
+    code === '42P01' || // undefined_table
+    code === 'PGRST204' ||
+    code === 'PGRST205' ||
+    msg.includes('column') ||
+    msg.includes('relation') ||
+    msg.includes('bucket') ||
+    msg.includes('does not exist')
+  )
+}
 
 export async function listMaintenanceWindows() {
   const { data, error } = await supabase
     .from('app_maintenance_windows')
     .select('*')
     .order('starts_at', { ascending: false })
-  if (error) throw error
+  if (error) {
+    if (isMissing(error)) return []
+    throw error
+  }
   return data || []
 }
 
 export async function createMaintenanceWindow(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const minutes = Number(data.duration_minutes) || 30
   const starts = new Date()
   const ends = new Date(starts.getTime() + minutes * 60000)
@@ -34,7 +58,7 @@ export async function createMaintenanceWindow(formData: FormData) {
 }
 
 export async function updateMaintenanceWindow(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload: Record<string, unknown> = {
     title: data.title || null,
     message: data.message,
@@ -64,42 +88,49 @@ export async function deleteMaintenanceWindow(id: string) {
   revalidatePath(PATH)
 }
 
+const EMPTY_SPLASH = {
+  id: 1,
+  capa_inicializacao_url: null,
+  capa_inicializacao_tipo: 'image',
+  capa_inicializacao_poster_url: null,
+}
+
 export async function getSplashConfig() {
-  try {
-    const { data, error } = await supabase
-      .from('app_ui_config')
-      .select('capa_inicializacao_url, capa_inicializacao_tipo, capa_inicializacao_poster_url')
-      .eq('id', 1)
-      .single()
-    if (error) throw error
-    return data
-  } catch {
-    // Fallback para migrations antigas (sem poster)
-    const { data, error } = await supabase
-      .from('app_ui_config')
-      .select('capa_inicializacao_url, capa_inicializacao_tipo')
-      .eq('id', 1)
-      .single()
-    if (error) throw error
-    return { ...data, capa_inicializacao_poster_url: null }
-  }
+  // 1) com poster (migration 020)
+  const full = await supabase
+    .from('app_ui_config')
+    .select('capa_inicializacao_url, capa_inicializacao_tipo, capa_inicializacao_poster_url')
+    .eq('id', 1)
+    .single()
+  if (!full.error && full.data) return { id: 1, ...full.data }
+
+  // 2) sem poster (migration 018)
+  const old = await supabase
+    .from('app_ui_config')
+    .select('capa_inicializacao_url, capa_inicializacao_tipo')
+    .eq('id', 1)
+    .single()
+  if (!old.error && old.data) return { ...EMPTY_SPLASH, ...old.data }
+
+  // 3) tabela nem existe -> vazio (sem 500)
+  return EMPTY_SPLASH
 }
 
 export async function updateSplashConfig(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const base = {
     capa_inicializacao_url: data.capa_inicializacao_url || null,
     capa_inicializacao_tipo: data.media_type || 'image',
     updated_at: new Date().toISOString(),
   }
-  const withPoster = {
-    ...base,
-    capa_inicializacao_poster_url: data.capa_inicializacao_poster_url || null,
-  }
+  const withPoster = { ...base, capa_inicializacao_poster_url: data.capa_inicializacao_poster_url || null }
+
   let { error } = await supabase.from('app_ui_config').update(withPoster).eq('id', 1)
-  if (error) {
-    // Fallback para migrations antigas (sem poster)
-    ;({ error } = await supabase.from('app_ui_config').update(base).eq('id', 1))
+  if (error) ({ error } = await supabase.from('app_ui_config').update(base).eq('id', 1))
+  if (error && isMissing(error)) {
+    throw new Error(
+      'Tabela app_ui_config não existe. Rode a migration 018 no Supabase (SQL Editor).',
+    )
   }
   if (error) throw error
   revalidatePath(PATH)

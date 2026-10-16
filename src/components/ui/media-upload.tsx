@@ -17,6 +17,21 @@ interface MediaUploadProps {
 
 const ACCEPT_ALL = 'image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime'
 
+/** Descrição amigável dos erros comuns de Storage. */
+function friendlyError(message: string) {
+  const m = message.toLowerCase()
+  if (m.includes('bucket not found')) {
+    return 'Bucket "media" não existe neste projeto. Rode a migration 021 no Supabase (SQL Editor) do projeto correspondente (teste e/ou produção).'
+  }
+  if (m.includes('row-level security') || m.includes('new row violates')) {
+    return 'Sem permissão para enviar. Verifique se você está logado como admin e se as policies do bucket "media" existem.'
+  }
+  if (m.includes('exceeded the maximum allowed size')) {
+    return 'Arquivo acima do limite do bucket (50MB).'
+  }
+  return message
+}
+
 export function MediaUpload({ label, fieldName, tooltipText, folder, value, onChange, hint, accept = ACCEPT_ALL }: MediaUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -33,8 +48,8 @@ export function MediaUpload({ label, fieldName, tooltipText, folder, value, onCh
       setError('Selecione uma imagem ou vídeo.')
       return
     }
-    if (file.size > 40 * 1024 * 1024) {
-      setError('Arquivo muito grande. Máximo 40MB.')
+    if (file.size > 50 * 1024 * 1024) {
+      setError('Arquivo muito grande. Máximo 50MB.')
       return
     }
 
@@ -44,19 +59,20 @@ export function MediaUpload({ label, fieldName, tooltipText, folder, value, onCh
       const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9.-]/g, '_').slice(0, 50) || 'media'
       const path = `${folder}/${Date.now()}-${baseName}.${ext}`
 
-      const localUrl = URL.createObjectURL(file)
-      setPreview(localUrl)
+      setPreview(URL.createObjectURL(file))
 
       const { error: upErr } = await supabase.storage.from('media').upload(path, file, {
         contentType: file.type || (isVid ? 'video/mp4' : 'image/png'),
-        upsert: false,
+        upsert: true,
       })
       if (upErr) throw upErr
 
       const { data } = supabase.storage.from('media').getPublicUrl(path)
+      if (!data?.publicUrl) throw new Error('URL pública não gerada.')
       onChange(data.publicUrl)
     } catch (e: any) {
-      setError(e?.message || 'Falha no upload.')
+      setPreview(null)
+      setError(friendlyError(e?.message || 'Falha no upload.'))
     } finally {
       setUploading(false)
     }
@@ -118,7 +134,7 @@ export function MediaUpload({ label, fieldName, tooltipText, folder, value, onCh
           </div>
         )}
       </div>
-      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-600 mt-1 whitespace-pre-wrap">{error}</p>}
       <input type="hidden" name={fieldName} value={value} readOnly className="hidden" />
     </div>
   )
