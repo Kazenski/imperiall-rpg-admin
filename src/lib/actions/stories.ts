@@ -76,12 +76,17 @@ export async function listScenes(storyId: string) {
 
 export async function createScene(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const { error } = await supabase.from('story_scenes').insert({
-    story_id: data.story_id, order_index: Number(data.order_index) || 0,
-    title: data.title || null, background_url: data.background_url || null,
-  })
+  const { data: row, error } = await supabase
+    .from('story_scenes')
+    .insert({
+      story_id: data.story_id, order_index: Number(data.order_index) || 0,
+      title: data.title || null, background_url: data.background_url || null,
+    })
+    .select()
+    .single()
   if (error) throw error
   revalidatePath(PATH)
+  return row
 }
 
 export async function updateScene(id: string, formData: FormData) {
@@ -113,11 +118,13 @@ export async function createLine(formData: FormData) {
     speaker_type: data.speaker_type, speaker_name: data.speaker_name || null,
     npc_id: data.npc_id || null, text: data.text, portrait_url: data.portrait_url || null,
     unlock_zone_id: data.unlock_zone_id || null,
+    only_via_choice: data.only_via_choice === 'on',
   }
   const { error } = await supabase.from('story_lines').insert(payload)
   if (error) {
     if (isMissingColumn(error)) {
       delete payload.unlock_zone_id
+      delete payload.only_via_choice
       const { error: retryError } = await supabase.from('story_lines').insert(payload)
       if (retryError) throw retryError
       revalidatePath(PATH)
@@ -135,11 +142,13 @@ export async function updateLine(id: string, formData: FormData) {
     speaker_type: data.speaker_type, speaker_name: data.speaker_name || null,
     npc_id: data.npc_id || null, text: data.text, portrait_url: data.portrait_url || null,
     unlock_zone_id: data.unlock_zone_id || null,
+    only_via_choice: data.only_via_choice === 'on',
   }
   const { error } = await supabase.from('story_lines').update(payload).eq('id', id)
   if (error) {
     if (isMissingColumn(error)) {
       delete payload.unlock_zone_id
+      delete payload.only_via_choice
       const { error: retryError } = await supabase.from('story_lines').update(payload).eq('id', id)
       if (retryError) throw retryError
       revalidatePath(PATH)
@@ -153,6 +162,55 @@ export async function updateLine(id: string, formData: FormData) {
 export async function deleteLine(id: string) {
   const { error } = await supabase.from('story_lines').delete().eq('id', id)
   if (error) throw error
+  revalidatePath(PATH)
+}
+
+export async function moveLine(lineId: string, sceneId: string, orderIndex?: number) {
+  const payload: Record<string, unknown> = { scene_id: sceneId }
+  if (typeof orderIndex === 'number') payload.order_index = orderIndex
+  const { error } = await supabase.from('story_lines').update(payload).eq('id', lineId)
+  if (error) throw error
+  revalidatePath(PATH)
+}
+
+export async function duplicateLine(lineId: string) {
+  const { data: original, error: readError } = await supabase
+    .from('story_lines')
+    .select('*')
+    .eq('id', lineId)
+    .single()
+  if (readError) throw readError
+  if (!original) throw new Error('Fala não encontrada')
+  // Remove campos que não devem ser copiados literalmente.
+  const {
+    id: _id,
+    created_at: _created,
+    updated_at: _updated,
+    ...base
+  } = original as Record<string, unknown>
+  // Coloca a cópia no final da mesma cena (ordem alta para não colidir).
+  base.order_index = Number(base.order_index || 0) + 1000
+  base.text = `${base.text ?? ''}`.trim() ? `[Cópia] ${base.text}` : '[Cópia]'
+  const { data: row, error } = await supabase
+    .from('story_lines')
+    .insert(base)
+    .select()
+    .single()
+  if (error) throw error
+  revalidatePath(PATH)
+  return row
+}
+
+export async function toggleLineViaChoice(lineId: string, value: boolean) {
+  const payload: Record<string, unknown> = { only_via_choice: value }
+  const { error } = await supabase.from('story_lines').update(payload).eq('id', lineId)
+  if (error) {
+    if (isMissingColumn(error)) {
+      // Sem a coluna: nada a fazer.
+      return
+    }
+    throw error
+  }
   revalidatePath(PATH)
 }
 
