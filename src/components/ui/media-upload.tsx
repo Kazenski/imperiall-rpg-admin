@@ -47,13 +47,13 @@ export function MediaUpload({ label, fieldName, tooltipText, folder, value, onCh
       const localUrl = URL.createObjectURL(file)
       setPreview(localUrl)
 
-      const { error: upErr } = await supabase.storage.from('assets').upload(path, file, {
+      const { error: upErr } = await supabase.storage.from('media').upload(path, file, {
         contentType: file.type || (isVid ? 'video/mp4' : 'image/png'),
         upsert: false,
       })
       if (upErr) throw upErr
 
-      const { data } = supabase.storage.from('assets').getPublicUrl(path)
+      const { data } = supabase.storage.from('media').getPublicUrl(path)
       onChange(data.publicUrl)
     } catch (e: any) {
       setError(e?.message || 'Falha no upload.')
