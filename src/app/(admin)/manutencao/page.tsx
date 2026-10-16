@@ -9,11 +9,13 @@ import {
   getSplashConfig,
   updateSplashConfig,
 } from '@/lib/actions/maintenance'
-import { ImageUpload } from '@/components/ui/image-upload'
+import { MediaUpload } from '@/components/ui/media-upload'
 
 export default function ManutencaoPage() {
   const [windows, setWindows] = useState<any[]>([])
   const [splash, setSplash] = useState<any>(null)
+  const [splashUrl, setSplashUrl] = useState('')
+  const [maintenanceMediaUrl, setMaintenanceMediaUrl] = useState('')
   const [loading, setLoading] = useState(true)
 
   const load = async () => {
@@ -22,6 +24,7 @@ export default function ManutencaoPage() {
       const [w, s] = await Promise.all([listMaintenanceWindows(), getSplashConfig()])
       setWindows(w || [])
       setSplash(s)
+      setSplashUrl(s?.capa_inicializacao_url || '')
     } finally {
       setLoading(false)
     }
@@ -49,20 +52,20 @@ export default function ManutencaoPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="text-sm">Tipo de mídia</label>
-            <select name="media_type" defaultValue={splash?.splash_media_type || 'image'} className="w-full border rounded px-2.5 py-1.5 bg-background">
+            <select name="media_type" defaultValue={splash?.capa_inicializacao_tipo || 'image'} className="w-full border rounded px-2.5 py-1.5 bg-background">
               <option value="image">Imagem</option>
               <option value="video">Vídeo</option>
             </select>
           </div>
-          <div>
-            <label className="text-sm">URL da mídia</label>
-            <input
-              name="splash_media_url"
-              defaultValue={splash?.splash_media_url || ''}
-              className="w-full border rounded px-2.5 py-1.5 bg-background"
-              placeholder="https://..."
-            />
-          </div>
+          <MediaUpload
+            label="Capa de inicialização"
+            fieldName="capa_inicializacao_url"
+            tooltipText="Imagem ou vídeo que aparece na tela de login do app."
+            folder="splash"
+            value={splashUrl}
+            onChange={setSplashUrl}
+            hint="Imagem ou vídeo (MP4/WebM). Máximo 40MB."
+          />
         </div>
         <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">Salvar mídia de login</button>
       </form>
@@ -101,10 +104,15 @@ export default function ManutencaoPage() {
               <option value="video">Vídeo</option>
             </select>
           </div>
-          <div>
-            <label className="text-sm">URL da mídia de manutenção</label>
-            <input name="media_url" className="w-full border rounded px-2.5 py-1.5 bg-background" placeholder="https://..." />
-          </div>
+          <MediaUpload
+            label="Mídia de manutenção"
+            fieldName="media_url"
+            tooltipText="Imagem ou vídeo exibido na tela de manutenção."
+            folder="maintenance"
+            value={maintenanceMediaUrl}
+            onChange={setMaintenanceMediaUrl}
+            hint="Imagem ou vídeo (MP4/WebM). Máximo 40MB."
+          />
         </div>
         <label className="flex items-center gap-2">
           <input type="checkbox" name="is_active" defaultChecked /> Ativar imediatamente
