@@ -14,14 +14,22 @@ Painel administrativo para gerenciar o catálogo do jogo Imperiall RPG (ARPG mob
 
 ## Configuração local
 
+O painel segue a regra **staging-first**: o ambiente local aponta para o banco de
+staging, e o topo da tela mostra um selo com o ambiente (STAGING / PRODUÇÃO).
+
 ```bash
 npm install
-cp .env.example .env.local
-# preencha NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY
+cp .env.example.local .env.local
+# já vem preenchido com o projeto de staging
 npm run dev
 ```
 
 Acesse `http://localhost:3000`.
+
+## Deploy
+
+Fluxo obrigatório: branch `staging` (preview Vercel + banco staging) → validar
+→ `main` (produção). Veja [`docs/FLUXO-DEPLOY.md`](docs/FLUXO-DEPLOY.md).
 
 ## Deploy (Vercel)
 
