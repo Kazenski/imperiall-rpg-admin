@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { countTable, listAnalyticsEvents } from '@/lib/actions/analytics'
 import { listItems } from '@/lib/actions/items'
+import { listSkills } from '@/lib/actions/skills'
 import { listStages } from '@/lib/actions/stages'
 import { listRecipes } from '@/lib/actions/crafting'
 import { listStories } from '@/lib/actions/stories'
@@ -35,6 +36,7 @@ export default function BiPage() {
   const [counts, setCounts] = useState({ profiles: 0, items: 0, skills: 0, stories: 0 })
   const [events, setEvents] = useState<any[]>([])
   const [itemsMap, setItemsMap] = useState<NamedMap>({})
+  const [skillsMap, setSkillsMap] = useState<NamedMap>({})
   const [stagesMap, setStagesMap] = useState<NamedMap>({})
   const [recipesMap, setRecipesMap] = useState<NamedMap>({})
   const [storiesMap, setStoriesMap] = useState<NamedMap>({})
@@ -49,6 +51,13 @@ export default function BiPage() {
       countTable('skills').then((n) => setCounts((c) => ({ ...c, skills: n }))),
       countTable('stories').then((n) => setCounts((c) => ({ ...c, stories: n }))),
       listAnalyticsEvents(since).then(setEvents).catch(() => setEvents([])),
+      listSkills()
+        .then((rows: any[]) => {
+          const m: NamedMap = {}
+          rows.forEach((r: any) => { m[String(r.id)] = String(r.name || r.id) })
+          setSkillsMap(m)
+        })
+        .catch(() => {}),
       listItems()
         .then((rows: any[]) => {
           const m: NamedMap = {}
@@ -164,6 +173,21 @@ export default function BiPage() {
       .slice(0, 10)
   }, [events, recipesMap])
 
+  const skillLearnedStats = useMemo(() => {
+    const m = new Map<string, number>()
+    events
+      .filter((e) => e.event_type === 'skill_learned')
+      .forEach((e) => {
+        const id = e.entity_id || 'desconhecido'
+        const label = skillsMap[id] || `Skill ${id.slice(0, 8)}`
+        m.set(label, (m.get(label) || 0) + 1)
+      })
+    return [...m.entries()]
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10)
+  }, [events, skillsMap])
+
   const activeUsers = useMemo(() => {
     const s = new Set(events.map((e) => e.player_id).filter(Boolean))
     return s.size
@@ -238,6 +262,12 @@ export default function BiPage() {
           <div className="border rounded-xl p-4 bg-zinc-900/60">
             <h3 className="text-sm font-semibold text-indigo-300 mb-3">Itens mais equipados</h3>
             <BarList items={equippedStats} />
+          </div>
+        )}
+        {(view === 'overview' || view === 'items') && (
+          <div className="border rounded-xl p-4 bg-zinc-900/60">
+            <h3 className="text-sm font-semibold text-indigo-300 mb-3">Skills mais aprendidas</h3>
+            <BarList items={skillLearnedStats} />
           </div>
         )}
         {(view === 'overview' || view === 'battles') && (
