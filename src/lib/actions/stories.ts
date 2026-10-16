@@ -235,12 +235,19 @@ export async function createChoice(formData: FormData) {
   const { error } = await supabase.from('story_choices').insert(payload)
   if (error) {
     if (isMissingColumn(error)) {
-      delete payload.unlock_zone_id
-      delete payload.next_line_id
-      const { error: retryError } = await supabase.from('story_choices').insert(payload)
-      if (retryError) throw retryError
-      revalidatePath(PATH)
-      return
+      // Só o unlock_zone_id é "opcional recente": tenta sem ele.
+      if (payload.unlock_zone_id !== undefined) {
+        delete payload.unlock_zone_id
+        const { error: retryError } = await supabase.from('story_choices').insert(payload)
+        if (!retryError) {
+          revalidatePath(PATH)
+          return
+        }
+      }
+      // next_line_id / next_scene_id são essenciais para o fluxo de opções.
+      throw new Error(
+        'Banco sem as colunas de destino (next_line_id/next_scene_id). Rode a migration 013 (e 016) no Supabase antes de cadastrar opções.',
+      )
     }
     throw error
   }
@@ -262,12 +269,17 @@ export async function updateChoice(id: string, formData: FormData) {
   const { error } = await supabase.from('story_choices').update(payload).eq('id', id)
   if (error) {
     if (isMissingColumn(error)) {
-      delete payload.unlock_zone_id
-      delete payload.next_line_id
-      const { error: retryError } = await supabase.from('story_choices').update(payload).eq('id', id)
-      if (retryError) throw retryError
-      revalidatePath(PATH)
-      return
+      if (payload.unlock_zone_id !== undefined) {
+        delete payload.unlock_zone_id
+        const { error: retryError } = await supabase.from('story_choices').update(payload).eq('id', id)
+        if (!retryError) {
+          revalidatePath(PATH)
+          return
+        }
+      }
+      throw new Error(
+        'Banco sem as colunas de destino (next_line_id/next_scene_id). Rode a migration 013 (e 016) no Supabase antes de cadastrar opções.',
+      )
     }
     throw error
   }
