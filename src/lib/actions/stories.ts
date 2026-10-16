@@ -166,8 +166,39 @@ export async function deleteLine(id: string) {
 }
 
 export async function moveLine(lineId: string, sceneId: string, orderIndex?: number) {
-  const payload: Record<string, unknown> = { scene_id: sceneId }
-  if (typeof orderIndex === 'number') payload.order_index = orderIndex
+  // Define uma ordem segura no destino (evita violação de unicidade
+  // quando o índice informado já existe na cena de destino).
+  let nextOrder = typeof orderIndex === 'number' ? orderIndex : undefined
+  if (nextOrder === undefined) {
+    const { data: targetLines } = await supabase
+      .from('story_lines')
+      .select('order_index')
+      .eq('scene_id', sceneId)
+    const max = (targetLines || []).reduce(
+      (m: number, r: any) => Math.max(m, Number(r?.order_index) || 0),
+      -1,
+    )
+    nextOrder = max + 1
+  }
+  // Se o índice sugerido colidir com uma linha existente, empurra para o fim.
+  const { data: collision } = await supabase
+    .from('story_lines')
+    .select('id')
+    .eq('scene_id', sceneId)
+    .eq('order_index', nextOrder)
+    .neq('id', lineId)
+  if (collision && collision.length > 0) {
+    const { data: targetLines } = await supabase
+      .from('story_lines')
+      .select('order_index')
+      .eq('scene_id', sceneId)
+    const max = (targetLines || []).reduce(
+      (m: number, r: any) => Math.max(m, Number(r?.order_index) || 0),
+      -1,
+    )
+    nextOrder = max + 1
+  }
+  const payload: Record<string, unknown> = { scene_id: sceneId, order_index: nextOrder }
   const { error } = await supabase.from('story_lines').update(payload).eq('id', lineId)
   if (error) throw error
   revalidatePath(PATH)
