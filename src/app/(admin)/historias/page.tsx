@@ -657,6 +657,7 @@ export default function HistoriasPage() {
                               text: '',
                               portrait_url: '',
                               unlock_zone_id: '',
+                              only_via_choice: false,
                             })
                             setShowLineForm(true)
                           }}
