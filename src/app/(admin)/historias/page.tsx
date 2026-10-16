@@ -64,7 +64,7 @@ export default function HistoriasPage() {
   const [editingScene, setEditingScene] = useState<any>(null)
   const [showSceneForm, setShowSceneForm] = useState(false)
 
-  const [lineForm, setLineForm] = useState({ order_index: 0, speaker_type: 'narrator', speaker_name: '', npc_id: '', text: '', portrait_url: '', unlock_zone_id: '' })
+  const [lineForm, setLineForm] = useState({ order_index: 0, speaker_type: 'narrator', speaker_name: '', npc_id: '', text: '', portrait_url: '', unlock_zone_id: '', only_via_choice: false })
   const [editingLine, setEditingLine] = useState<any>(null)
   const [showLineForm, setShowLineForm] = useState(false)
 
@@ -681,6 +681,7 @@ export default function HistoriasPage() {
                               fd.set('text', lineForm.text)
                               fd.set('portrait_url', lineForm.portrait_url)
                               fd.set('unlock_zone_id', lineForm.unlock_zone_id)
+                              fd.set('only_via_choice', lineForm.only_via_choice ? 'on' : '')
                               if (editingLine) await updateLine(editingLine.id, fd)
                               else await createLine(fd)
                               setShowLineForm(false)
@@ -783,6 +784,17 @@ export default function HistoriasPage() {
                             hint="PNG retrato (opcional, saída 512×512)"
                             forceSize={512}
                           />
+                          <label className="flex items-center gap-2 pt-1 text-sm text-amber-200">
+                            <input
+                              type="checkbox"
+                              name="only_via_choice"
+                              checked={lineForm.only_via_choice}
+                              onChange={(e) => setLineForm({ ...lineForm, only_via_choice: e.target.checked })}
+                              className="w-4 h-4 rounded border-amber-500/40 bg-zinc-900 accent-amber-500"
+                            />
+                            <span>Somente aparece via opção (oculta do fluxo normal / automático da história)</span>
+                            <Tooltip text="Se marcado, esta fala nunca entra na listagem sequencial automática da cena; ela só será exibida se o jogador clicar em uma opção de escolha que aponte para ela." />
+                          </label>
                           <div className="flex gap-2">
                             <button
                               type="submit"
@@ -878,6 +890,7 @@ export default function HistoriasPage() {
                                         text: l.text,
                                         portrait_url: l.portrait_url || '',
                                         unlock_zone_id: l.unlock_zone_id || '',
+                                        only_via_choice: Boolean(l.only_via_choice),
                                       })
                                       setShowLineForm(true)
                                     }}
