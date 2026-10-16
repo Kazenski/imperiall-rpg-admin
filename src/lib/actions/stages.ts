@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { slugExists } from '@/lib/utils/slug'
 
 export async function listZones() {
   const { data, error } = await supabase.from('zones').select('*').order('sort_order', { ascending: true })
@@ -29,6 +30,7 @@ export async function createStage(formData: FormData) {
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
+  if (await slugExists('stages', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('stages').insert(payload)
   if (error) throw error
   revalidatePath('/stages')
@@ -48,6 +50,7 @@ export async function updateStage(id: string, formData: FormData) {
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
+  if (await slugExists('stages', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('stages').update(payload).eq('id', id)
   if (error) throw error
   revalidatePath('/stages')

@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { slugExists } from '@/lib/utils/slug'
 
 export async function listNpcs() {
   const { data, error } = await supabase.from('npcs').select('*').order('sort_order')
@@ -11,6 +12,7 @@ export async function listNpcs() {
 
 export async function createNpc(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
+  if (await slugExists('npcs', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('npcs').insert({
     slug: data.slug,
     name: data.name,
@@ -25,6 +27,7 @@ export async function createNpc(formData: FormData) {
 
 export async function updateNpc(id: string, formData: FormData) {
   const data = Object.fromEntries(formData.entries())
+  if (await slugExists('npcs', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('npcs').update({
     slug: data.slug,
     name: data.name,

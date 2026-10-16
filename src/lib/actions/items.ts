@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { slugExists } from '@/lib/utils/slug'
 
 export async function listItems() {
   const { data, error } = await supabase.from('items').select('*').order('sort_order', { ascending: true })
@@ -30,6 +31,7 @@ export async function createItem(formData: FormData) {
     sort_order: Number(data.sort_order) || 0,
   }
 
+  if (await slugExists('items', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('items').insert(payload)
   if (error) throw error
   revalidatePath('/items')
@@ -56,6 +58,7 @@ export async function updateItem(id: string, formData: FormData) {
     sort_order: Number(data.sort_order) || 0,
   }
 
+  if (await slugExists('items', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('items').update(payload).eq('id', id)
   if (error) throw error
   revalidatePath('/items')

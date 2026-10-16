@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { slugExists } from '@/lib/utils/slug'
 
 const PATH = '/historias'
 
@@ -19,6 +20,7 @@ export async function createStory(formData: FormData) {
     lore_reward: Number(data.lore_reward) || 0,
     is_active: data.is_active === 'on', sort_order: Number(data.sort_order) || 0,
   }
+  if (await slugExists('stories', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('stories').insert(payload)
   if (error) {
     // Banco sem a migration 012: salva sem o prêmio em vez de quebrar.
@@ -42,6 +44,7 @@ export async function updateStory(id: string, formData: FormData) {
     lore_reward: Number(data.lore_reward) || 0,
     is_active: data.is_active === 'on', sort_order: Number(data.sort_order) || 0,
   }
+  if (await slugExists('stories', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('stories').update(payload).eq('id', id)
   if (error) {
     if (isMissingColumn(error)) {

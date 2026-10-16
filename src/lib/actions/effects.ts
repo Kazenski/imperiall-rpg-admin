@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { slugExists } from '@/lib/utils/slug'
 
 const PATH = '/efeitos'
 
@@ -13,6 +14,8 @@ export async function listEffects() {
 
 export async function createEffect(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
+  if (await slugExists('effects', data.slug)) throw new Error('Slug já existe')
+  if (await slugExists('effects', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('effects').insert({
     slug: data.slug,
     name: data.name,
@@ -31,6 +34,7 @@ export async function createEffect(formData: FormData) {
 
 export async function updateEffect(id: string, formData: FormData) {
   const data = Object.fromEntries(formData.entries())
+  if (await slugExists('effects', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('effects').update({
     slug: data.slug,
     name: data.name,

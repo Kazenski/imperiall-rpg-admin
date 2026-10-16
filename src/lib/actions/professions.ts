@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { slugExists } from '@/lib/utils/slug'
 
 export async function listProfessions() {
   const { data, error } = await supabase.from('professions').select('*').order('sort_order')
@@ -11,6 +12,7 @@ export async function listProfessions() {
 
 export async function createProfession(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
+  if (await slugExists('professions', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('professions').insert({
     slug: data.slug,
     name: data.name,
@@ -25,6 +27,7 @@ export async function createProfession(formData: FormData) {
 
 export async function updateProfession(id: string, formData: FormData) {
   const data = Object.fromEntries(formData.entries())
+  if (await slugExists('professions', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('professions').update({
     slug: data.slug,
     name: data.name,

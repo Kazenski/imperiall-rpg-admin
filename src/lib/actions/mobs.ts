@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { slugExists } from '@/lib/utils/slug'
 
 export async function listMobs() {
   const { data, error } = await supabase.from('mobs').select('*').order('created_at', { ascending: false })
@@ -33,6 +34,7 @@ export async function createMob(formData: FormData) {
     hitbox_h: Number(data.hitbox_h) || 32,
     is_active: data.is_active === 'on',
   }
+  if (await slugExists('mobs', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('mobs').insert(payload)
   if (error) throw error
   revalidatePath('/mobs')
@@ -62,6 +64,7 @@ export async function updateMob(id: string, formData: FormData) {
     hitbox_h: Number(data.hitbox_h) || 32,
     is_active: data.is_active === 'on',
   }
+  if (await slugExists('mobs', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('mobs').update(payload).eq('id', id)
   if (error) throw error
   revalidatePath('/mobs')

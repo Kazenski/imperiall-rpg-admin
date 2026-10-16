@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { slugExists } from '@/lib/utils/slug'
 
 const PATH = '/personagens'
 
@@ -34,6 +35,7 @@ export async function createCharacter(formData: FormData) {
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
+  if (await slugExists('characters', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('characters').insert(payload)
   if (error) {
     if (isMissingColumn(error)) {
@@ -65,6 +67,7 @@ export async function updateCharacter(id: string, formData: FormData) {
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
+  if (await slugExists('characters', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('characters').update(payload).eq('id', id)
   if (error) {
     if (isMissingColumn(error)) {

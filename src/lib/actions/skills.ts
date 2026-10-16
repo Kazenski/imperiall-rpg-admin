@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { slugExists } from '@/lib/utils/slug'
 
 export async function listSkills() {
   const { data, error } = await supabase.from('skills').select('*').order('sort_order', { ascending: true })
@@ -27,6 +28,7 @@ export async function createSkill(formData: FormData) {
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
+  if (await slugExists('skills', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('skills').insert(payload)
   if (error) throw error
   revalidatePath('/skills')
@@ -49,6 +51,7 @@ export async function updateSkill(id: string, formData: FormData) {
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
+  if (await slugExists('skills', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('skills').update(payload).eq('id', id)
   if (error) throw error
   revalidatePath('/skills')

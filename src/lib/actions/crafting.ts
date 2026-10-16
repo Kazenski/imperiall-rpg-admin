@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
+import { slugExists } from '@/lib/utils/slug'
 
 const TREE_PATH = '/arvore'
 const CRAFT_PATH = '/receitas'
@@ -88,6 +89,8 @@ export async function createRecipe(formData: FormData) {
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
+  if (await slugExists('recipes', data.slug)) throw new Error('Slug já existe')
+  if (await slugExists('recipes', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('recipes').insert(payload)
   if (error) {
     if (isMissingColumn(error)) {
@@ -117,6 +120,8 @@ export async function updateRecipe(id: string, formData: FormData) {
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
+  if (await slugExists('recipes', data.slug, id)) throw new Error('Slug já existe')
+  if (await slugExists('recipes', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('recipes').update(payload).eq('id', id)
   if (error) {
     if (isMissingColumn(error)) {
