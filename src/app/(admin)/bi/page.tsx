@@ -5,6 +5,7 @@ import { countTable, listAnalyticsEvents } from '@/lib/actions/analytics'
 import { listItems } from '@/lib/actions/items'
 import { listSkills } from '@/lib/actions/skills'
 import { listStages } from '@/lib/actions/stages'
+import { listZones } from '@/lib/actions/zones'
 import { listRecipes } from '@/lib/actions/crafting'
 import { listStories } from '@/lib/actions/stories'
 
@@ -38,6 +39,7 @@ export default function BiPage() {
   const [itemsMap, setItemsMap] = useState<NamedMap>({})
   const [skillsMap, setSkillsMap] = useState<NamedMap>({})
   const [stagesMap, setStagesMap] = useState<NamedMap>({})
+  const [zonesMap, setZonesMap] = useState<NamedMap>({})
   const [recipesMap, setRecipesMap] = useState<NamedMap>({})
   const [storiesMap, setStoriesMap] = useState<NamedMap>({})
   const [loading, setLoading] = useState(true)
@@ -70,6 +72,13 @@ export default function BiPage() {
           const m: NamedMap = {}
           rows.forEach((r) => { m[String(r.id)] = String(r.title || `Etapa #${r.order_index}` || r.id) })
           setStagesMap(m)
+        })
+        .catch(() => {}),
+      listZones()
+        .then((rows: any[]) => {
+          const m: NamedMap = {}
+          rows.forEach((r: any) => { m[String(r.id)] = String(r.name || r.id) })
+          setZonesMap(m)
         })
         .catch(() => {}),
       listRecipes()
@@ -188,6 +197,25 @@ export default function BiPage() {
       .slice(0, 10)
   }, [events, skillsMap])
 
+  const zoneUnlocks = useMemo(() => {
+    const m = new Map<string, number>()
+    events
+      .filter((e) => e.event_type === 'zone_unlocked')
+      .forEach((e) => {
+        const id = e.entity_id || 'desconhecido'
+        const label = zonesMap[id] || `Zona ${id.slice(0, 8)}`
+        m.set(label, (m.get(label) || 0) + 1)
+      })
+    return [...m.entries()]
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10)
+  }, [events, zonesMap])
+
+  const storyCompletions = useMemo(() => {
+    return events.filter((e) => e.event_type === 'story_completed').length
+  }, [events])
+
   const activeUsers = useMemo(() => {
     const s = new Set(events.map((e) => e.player_id).filter(Boolean))
     return s.size
@@ -274,6 +302,12 @@ export default function BiPage() {
           <div className="border rounded-xl p-4 bg-zinc-900/60">
             <h3 className="text-sm font-semibold text-indigo-300 mb-3">Batalhas concluídas por zona/stage</h3>
             <BarList items={battleStats} />
+          </div>
+        )}
+        {(view === 'overview' || view === 'battles') && (
+          <div className="border rounded-xl p-4 bg-zinc-900/60">
+            <h3 className="text-sm font-semibold text-indigo-300 mb-3">Zonas mais desbloqueadas</h3>
+            <BarList items={zoneUnlocks} />
           </div>
         )}
         {(view === 'overview' || view === 'crafting') && (
