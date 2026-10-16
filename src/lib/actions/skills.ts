@@ -3,6 +3,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
 import { slugExists } from '@/lib/utils/slug'
+import { formStrings } from '@/lib/utils/form'
 
 export async function listSkills() {
   const { data, error } = await supabase.from('skills').select('*').order('sort_order', { ascending: true })
@@ -11,7 +12,7 @@ export async function listSkills() {
 }
 
 export async function createSkill(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
 
   const payload = {
     slug: data.slug,
@@ -35,7 +36,7 @@ export async function createSkill(formData: FormData) {
 }
 
 export async function updateSkill(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
 
   const payload = {
     slug: data.slug,

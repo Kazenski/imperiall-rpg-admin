@@ -3,6 +3,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
 import { slugExists } from '@/lib/utils/slug'
+import { formStrings } from '@/lib/utils/form'
 
 const PATH = '/efeitos'
 
@@ -13,8 +14,7 @@ export async function listEffects() {
 }
 
 export async function createEffect(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
-  if (await slugExists('effects', data.slug)) throw new Error('Slug já existe')
+  const data = formStrings(formData)
   if (await slugExists('effects', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('effects').insert({
     slug: data.slug,
@@ -33,7 +33,7 @@ export async function createEffect(formData: FormData) {
 }
 
 export async function updateEffect(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   if (await slugExists('effects', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('effects').update({
     slug: data.slug,
@@ -65,7 +65,7 @@ export async function listSkillEffects(skillId: string) {
 }
 
 export async function addSkillEffect(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const { error } = await supabase.from('skill_effects').insert({
     skill_id: data.skill_id,
     effect_id: data.effect_id,
@@ -89,7 +89,7 @@ export async function listItemEffects(itemId: string) {
 }
 
 export async function addItemEffect(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const { error } = await supabase.from('item_effects').insert({
     item_id: data.item_id,
     effect_id: data.effect_id,

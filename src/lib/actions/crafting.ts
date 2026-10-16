@@ -3,6 +3,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
 import { slugExists } from '@/lib/utils/slug'
+import { formStrings } from '@/lib/utils/form'
 
 const TREE_PATH = '/arvore'
 const CRAFT_PATH = '/receitas'
@@ -25,7 +26,7 @@ export async function listSkillNodes(characterId: string) {
 }
 
 export async function createSkillNode(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const { error } = await supabase.from('skill_nodes').insert({
     character_id: data.character_id,
     skill_id: data.skill_id,
@@ -42,7 +43,7 @@ export async function createSkillNode(formData: FormData) {
 }
 
 export async function updateSkillNode(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const { error } = await supabase
     .from('skill_nodes')
     .update({
@@ -75,7 +76,7 @@ export async function listRecipes() {
 }
 
 export async function createRecipe(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const baseChance = Math.min(100, Math.max(1, Number(data.base_chance ?? 70) || 70))
   const payload: Record<string, unknown> = {
     slug: data.slug,
@@ -89,7 +90,6 @@ export async function createRecipe(formData: FormData) {
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
-  if (await slugExists('recipes', data.slug)) throw new Error('Slug já existe')
   if (await slugExists('recipes', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('recipes').insert(payload)
   if (error) {
@@ -106,7 +106,7 @@ export async function createRecipe(formData: FormData) {
 }
 
 export async function updateRecipe(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const baseChance = Math.min(100, Math.max(1, Number(data.base_chance ?? 70) || 70))
   const payload: Record<string, unknown> = {
     slug: data.slug,
@@ -120,7 +120,6 @@ export async function updateRecipe(id: string, formData: FormData) {
     is_active: data.is_active === 'on',
     sort_order: Number(data.sort_order) || 0,
   }
-  if (await slugExists('recipes', data.slug, id)) throw new Error('Slug já existe')
   if (await slugExists('recipes', data.slug, id)) throw new Error('Slug já existe')
   const { error } = await supabase.from('recipes').update(payload).eq('id', id)
   if (error) {
@@ -152,7 +151,7 @@ export async function listRecipeMaterials(recipeId: string) {
 }
 
 export async function addRecipeMaterial(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const { error } = await supabase.from('recipe_materials').insert({
     recipe_id: data.recipe_id,
     item_id: data.item_id,
@@ -179,7 +178,7 @@ export async function listUpgradeLevels(itemId: string) {
 }
 
 export async function addUpgradeLevel(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const baseChance = Math.min(100, Math.max(1, Number(data.base_chance ?? 80) || 80))
   const payload: Record<string, unknown> = {
     item_id: data.item_id,
@@ -218,7 +217,7 @@ export async function listUpgradeMaterials(upgradeId: string) {
 }
 
 export async function addUpgradeMaterial(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const { error } = await supabase.from('item_upgrade_materials').insert({
     upgrade_id: data.upgrade_id,
     item_id: data.item_id,

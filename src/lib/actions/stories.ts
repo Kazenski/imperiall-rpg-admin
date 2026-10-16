@@ -3,6 +3,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
 import { slugExists } from '@/lib/utils/slug'
+import { formStrings } from '@/lib/utils/form'
 
 const PATH = '/historias'
 
@@ -13,7 +14,7 @@ export async function listStories() {
 }
 
 export async function createStory(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload: Record<string, unknown> = {
     slug: data.slug, name: data.name, description: data.description || null,
     cover_url: data.cover_url || null,
@@ -37,7 +38,7 @@ export async function createStory(formData: FormData) {
 }
 
 export async function updateStory(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload: Record<string, unknown> = {
     slug: data.slug, name: data.name, description: data.description || null,
     cover_url: data.cover_url || null,

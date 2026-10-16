@@ -3,6 +3,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
 import { slugExists } from '@/lib/utils/slug'
+import { formStrings } from '@/lib/utils/form'
 
 const PATH = '/personagens'
 
@@ -19,7 +20,7 @@ export async function listCharacters() {
 }
 
 export async function createCharacter(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload: Record<string, unknown> = {
     slug: data.slug,
     name: data.name,
@@ -51,7 +52,7 @@ export async function createCharacter(formData: FormData) {
 }
 
 export async function updateCharacter(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload: Record<string, unknown> = {
     slug: data.slug,
     name: data.name,
@@ -95,7 +96,7 @@ export async function listCharacterSkills(characterId: string) {
 }
 
 export async function addCharacterSkill(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const { error } = await supabase.from('character_skills').insert({
     character_id: data.character_id,
     skill_id: data.skill_id,
@@ -118,7 +119,7 @@ export async function listCharacterTraits(characterId: string) {
 }
 
 export async function addCharacterTrait(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const { error } = await supabase.from('character_traits').insert({
     character_id: data.character_id,
     effect_id: data.effect_id,

@@ -3,6 +3,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
 import { slugExists } from '@/lib/utils/slug'
+import { formStrings } from '@/lib/utils/form'
 
 export async function listItems() {
   const { data, error } = await supabase.from('items').select('*').order('sort_order', { ascending: true })
@@ -11,7 +12,7 @@ export async function listItems() {
 }
 
 export async function createItem(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const stats: Record<string, any> = {}
   if (data.atk) stats.atk = Number(data.atk)
   if (data.def) stats.def = Number(data.def)
@@ -38,7 +39,7 @@ export async function createItem(formData: FormData) {
 }
 
 export async function updateItem(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const stats: Record<string, any> = {}
   if (data.atk) stats.atk = Number(data.atk)
   if (data.def) stats.def = Number(data.def)

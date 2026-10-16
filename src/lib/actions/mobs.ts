@@ -3,6 +3,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
 import { slugExists } from '@/lib/utils/slug'
+import { formStrings } from '@/lib/utils/form'
 
 export async function listMobs() {
   const { data, error } = await supabase.from('mobs').select('*').order('created_at', { ascending: false })
@@ -11,7 +12,7 @@ export async function listMobs() {
 }
 
 export async function createMob(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload = {
     slug: data.slug,
     name: data.name,
@@ -41,7 +42,7 @@ export async function createMob(formData: FormData) {
 }
 
 export async function updateMob(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload = {
     slug: data.slug,
     name: data.name,

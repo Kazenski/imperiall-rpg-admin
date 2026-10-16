@@ -3,6 +3,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
 import { slugExists } from '@/lib/utils/slug'
+import { formStrings } from '@/lib/utils/form'
 
 export async function listLootTables() {
   const { data, error } = await supabase.from('loot_tables').select('*, mobs(name), stages(name)').order('created_at', { ascending: false })
@@ -17,7 +18,7 @@ export async function listLootEntries(tableId: string) {
 }
 
 export async function createLootTable(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload = {
     slug: data.slug,
     name: data.name,
@@ -27,14 +28,13 @@ export async function createLootTable(formData: FormData) {
     is_active: data.is_active === 'on',
   }
   if (await slugExists('loot_tables', data.slug)) throw new Error('Slug já existe')
-  if (await slugExists('loot_tables', data.slug)) throw new Error('Slug já existe')
   const { error } = await supabase.from('loot_tables').insert(payload)
   if (error) throw error
   revalidatePath('/loot-tables')
 }
 
 export async function updateLootTable(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload = {
     slug: data.slug,
     name: data.name,
@@ -56,7 +56,7 @@ export async function deleteLootTable(id: string) {
 }
 
 export async function addLootEntry(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload = {
     loot_table_id: data.loot_table_id,
     item_id: data.item_id,

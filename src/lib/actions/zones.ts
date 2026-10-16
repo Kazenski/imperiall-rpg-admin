@@ -3,6 +3,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { revalidatePath } from 'next/cache'
 import { slugExists } from '@/lib/utils/slug'
+import { formStrings } from '@/lib/utils/form'
 
 export async function listZones() {
   const { data, error } = await supabase.from('zones').select('*').order('sort_order', { ascending: true })
@@ -11,7 +12,7 @@ export async function listZones() {
 }
 
 export async function createZone(formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload: Record<string, unknown> = {
     slug: data.slug,
     name: data.name,
@@ -38,7 +39,7 @@ export async function createZone(formData: FormData) {
 }
 
 export async function updateZone(id: string, formData: FormData) {
-  const data = Object.fromEntries(formData.entries())
+  const data = formStrings(formData)
   const payload: Record<string, unknown> = {
     slug: data.slug,
     name: data.name,
