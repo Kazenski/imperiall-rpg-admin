@@ -65,24 +65,42 @@ export async function deleteMaintenanceWindow(id: string) {
 }
 
 export async function getSplashConfig() {
-  const { data, error } = await supabase
-    .from('app_ui_config')
-    .select('*')
-    .eq('id', 1)
-    .single()
-  if (error) throw error
-  return data
+  try {
+    const { data, error } = await supabase
+      .from('app_ui_config')
+      .select('capa_inicializacao_url, capa_inicializacao_tipo, capa_inicializacao_poster_url')
+      .eq('id', 1)
+      .single()
+    if (error) throw error
+    return data
+  } catch {
+    // Fallback para migrations antigas (sem poster)
+    const { data, error } = await supabase
+      .from('app_ui_config')
+      .select('capa_inicializacao_url, capa_inicializacao_tipo')
+      .eq('id', 1)
+      .single()
+    if (error) throw error
+    return { ...data, capa_inicializacao_poster_url: null }
+  }
 }
 
 export async function updateSplashConfig(formData: FormData) {
   const data = Object.fromEntries(formData.entries())
-  const payload = {
+  const base = {
     capa_inicializacao_url: data.capa_inicializacao_url || null,
     capa_inicializacao_tipo: data.media_type || 'image',
-    capa_inicializacao_poster_url: data.capa_inicializacao_poster_url || null,
     updated_at: new Date().toISOString(),
   }
-  const { error } = await supabase.from('app_ui_config').update(payload).eq('id', 1)
+  const withPoster = {
+    ...base,
+    capa_inicializacao_poster_url: data.capa_inicializacao_poster_url || null,
+  }
+  let { error } = await supabase.from('app_ui_config').update(withPoster).eq('id', 1)
+  if (error) {
+    // Fallback para migrations antigas (sem poster)
+    ;({ error } = await supabase.from('app_ui_config').update(base).eq('id', 1))
+  }
   if (error) throw error
   revalidatePath(PATH)
 }
