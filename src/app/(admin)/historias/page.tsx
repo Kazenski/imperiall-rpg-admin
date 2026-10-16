@@ -6,6 +6,7 @@ import {
   listScenes, createScene, updateScene, deleteScene,
   listLines, createLine, updateLine, deleteLine,
   listChoices, createChoice, updateChoice, deleteChoice,
+  moveLine, duplicateLine, toggleLineViaChoice,
 } from '@/lib/actions/stories'
 import { listNpcs } from '@/lib/actions/npcs'
 import { listItems } from '@/lib/actions/items'
@@ -16,6 +17,7 @@ import { StoryTester } from '@/components/StoryTester'
 import {
   Plus, Pencil, Trash2, BookOpen, MessageSquare, GitBranch,
   Play, ChevronDown, ChevronRight, MapPin, ChevronsUpDown, Sparkles, Layers,
+  GripVertical, Copy, Eye, EyeOff,
 } from 'lucide-react'
 import { SearchBox, Counters } from '@/components/ui/data-table'
 
@@ -50,6 +52,8 @@ export default function HistoriasPage() {
   const [choices, setChoices] = useState<Record<string, any[]>>({})
   const [counts, setCounts] = useState<Record<string, { lines: number; choices: number }>>({})
   const [collapsedLines, setCollapsedLines] = useState<Record<string, boolean>>({})
+  const [draggingLineId, setDraggingLineId] = useState<string | null>(null)
+  const [pendingSceneId, setPendingSceneId] = useState<string | null>(null)
   const [testing, setTesting] = useState<any>(null)
   const [npcs, setNpcs] = useState<any[]>([])
   const [items, setItems] = useState<any[]>([])
@@ -64,7 +68,7 @@ export default function HistoriasPage() {
   const [editingScene, setEditingScene] = useState<any>(null)
   const [showSceneForm, setShowSceneForm] = useState(false)
 
-  const [lineForm, setLineForm] = useState({ order_index: 0, speaker_type: 'narrator', speaker_name: '', npc_id: '', text: '', portrait_url: '', unlock_zone_id: '' })
+  const [lineForm, setLineForm] = useState({ order_index: 0, speaker_type: 'narrator', speaker_name: '', npc_id: '', text: '', portrait_url: '', unlock_zone_id: '', only_via_choice: false })
   const [editingLine, setEditingLine] = useState<any>(null)
   const [showLineForm, setShowLineForm] = useState(false)
 
@@ -205,6 +209,16 @@ export default function HistoriasPage() {
       loadStoryDetails(activeStory.id, activeScene?.id)
     }
   }
+
+  useEffect(() => {
+    if (pendingSceneId && scenes.length > 0) {
+      const found = scenes.find((s: any) => s.id === pendingSceneId)
+      if (found) {
+        selectScene(found)
+        setPendingSceneId(null)
+      }
+    }
+  }, [scenes, pendingSceneId])
 
   const run = (fn: () => Promise<any>) =>
     startTransition(() =>
@@ -495,8 +509,12 @@ export default function HistoriasPage() {
                   fd.set('order_index', String(sceneForm.order_index))
                   fd.set('title', sceneForm.title)
                   fd.set('background_url', sceneForm.background_url)
-                  if (editingScene) await updateScene(editingScene.id, fd)
-                  else await createScene(fd)
+                  if (editingScene) {
+                    await updateScene(editingScene.id, fd)
+                  } else {
+                    const created: any = await createScene(fd)
+                    if (created?.id) setPendingSceneId(created.id)
+                  }
                   setShowSceneForm(false)
                   setEditingScene(null)
                 })
@@ -562,7 +580,25 @@ export default function HistoriasPage() {
               return (
                 <div
                   key={sc.id}
+                  onDragOver={(e) => {
+                    if (draggingLineId) {
+                      e.preventDefault()
+                      e.dataTransfer.dropEffect = 'move'
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const lineId = e.dataTransfer.getData('text/plain') || draggingLineId
+                    if (!lineId) return
+                    const targetCount = (allSceneLines[sc.id] || []).length
+                    run(() => moveLine(lineId, sc.id, targetCount))
+                    setDraggingLineId(null)
+                  }}
                   className={`border-2 rounded-xl overflow-hidden transition ${
+                    draggingLineId
+                      ? 'ring-2 ring-cyan-400/60'
+                      : ''
+                  } ${
                     isSceneOpen
                       ? 'border-indigo-500/60 bg-zinc-900/80 shadow-xl'
                       : 'border-zinc-800 bg-zinc-900/40 hover:border-indigo-500/40'
@@ -657,6 +693,7 @@ export default function HistoriasPage() {
                               text: '',
                               portrait_url: '',
                               unlock_zone_id: '',
+                              only_via_choice: false,
                             })
                             setShowLineForm(true)
                           }}
@@ -681,6 +718,7 @@ export default function HistoriasPage() {
                               fd.set('text', lineForm.text)
                               fd.set('portrait_url', lineForm.portrait_url)
                               fd.set('unlock_zone_id', lineForm.unlock_zone_id)
+                              fd.set('only_via_choice', lineForm.only_via_choice ? 'on' : '')
                               if (editingLine) await updateLine(editingLine.id, fd)
                               else await createLine(fd)
                               setShowLineForm(false)
@@ -783,6 +821,17 @@ export default function HistoriasPage() {
                             hint="PNG retrato (opcional, saída 512×512)"
                             forceSize={512}
                           />
+                          <label className="flex items-center gap-2 pt-1 text-sm text-amber-200">
+                            <input
+                              type="checkbox"
+                              name="only_via_choice"
+                              checked={lineForm.only_via_choice}
+                              onChange={(e) => setLineForm({ ...lineForm, only_via_choice: e.target.checked })}
+                              className="w-4 h-4 rounded border-amber-500/40 bg-zinc-900 accent-amber-500"
+                            />
+                            <span>Somente aparece via opção (oculta do fluxo normal / automático da história)</span>
+                            <Tooltip text="Se marcado, esta fala nunca entra na listagem sequencial automática da cena; ela só será exibida se o jogador clicar em uma opção de escolha que aponte para ela." />
+                          </label>
                           <div className="flex gap-2">
                             <button
                               type="submit"
@@ -821,10 +870,23 @@ export default function HistoriasPage() {
                           return (
                             <div
                               key={l.id}
-                              className={`border rounded-xl transition overflow-hidden ${style.card}`}
+                              draggable
+                              onDragStart={(e) => {
+                                setDraggingLineId(l.id)
+                                e.dataTransfer.setData('text/plain', l.id)
+                                e.dataTransfer.effectAllowed = 'move'
+                              }}
+                              onDragEnd={() => setDraggingLineId(null)}
+                              className={`border rounded-xl transition overflow-hidden ${style.card} ${draggingLineId === l.id ? 'opacity-50' : ''}`}
                             >
                               {/* Cabeçalho da Fala (sempre visível; clique minimiza/expande) */}
                               <div className="flex justify-between items-center gap-2 px-3.5 py-2.5">
+                                <span
+                                  className="text-zinc-500 hover:text-zinc-300 cursor-grab active:cursor-grabbing flex-shrink-0"
+                                  title="Arrastar para outra cena"
+                                >
+                                  <GripVertical size={16} />
+                                </span>
                                 <button
                                   type="button"
                                   onClick={() => toggleLineCollapse(l.id)}
@@ -854,6 +916,11 @@ export default function HistoriasPage() {
                                       <GitBranch size={11} /> {lineChoices.length} opção(ões)
                                     </span>
                                   )}
+                                   {l.only_via_choice && (
+                                     <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-600 text-xs inline-flex items-center gap-1 flex-shrink-0">
+                                       <EyeOff size={11} /> Só via opção
+                                     </span>
+                                   )}
                                   <span className="text-xs text-zinc-300 truncate ml-1">
                                     “{l.text}”
                                   </span>
@@ -878,6 +945,7 @@ export default function HistoriasPage() {
                                         text: l.text,
                                         portrait_url: l.portrait_url || '',
                                         unlock_zone_id: l.unlock_zone_id || '',
+                                        only_via_choice: Boolean(l.only_via_choice),
                                       })
                                       setShowLineForm(true)
                                     }}
@@ -885,6 +953,20 @@ export default function HistoriasPage() {
                                   >
                                     <Pencil size={11} /> Editar
                                   </button>
+                                   <button
+                                     onClick={() => run(() => duplicateLine(l.id))}
+                                     className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-600 hover:bg-zinc-700 inline-flex items-center gap-1"
+                                     title="Duplicar fala"
+                                   >
+                                     <Copy size={11} /> Duplicar
+                                   </button>
+                                   <button
+                                     onClick={() => run(() => toggleLineViaChoice(l.id, !l.only_via_choice))}
+                                     className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 inline-flex items-center gap-1"
+                                     title="Ocultar/mostrar no fluxo automatico"
+                                   >
+                                     {l.only_via_choice ? <Eye size={11} /> : <EyeOff size={11} />} {l.only_via_choice ? "Mostrar" : "Ocultar"}
+                                   </button>
                                   <button
                                     onClick={() => {
                                       if (confirm('Excluir fala e escolhas?')) run(() => deleteLine(l.id))

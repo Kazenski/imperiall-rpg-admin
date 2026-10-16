@@ -58,6 +58,25 @@ export function StoryTester({
         setScenes(ss)
         setLinesByScene(lb)
         setChoicesByLine(cb)
+        // Posiciona na primeira fala visível (oculta as "somente via opção").
+        let sIdx = 0
+        let lIdx = 0
+        let found = false
+        for (; sIdx < ss.length; sIdx++) {
+          const ls = lb[ss[sIdx].id] || []
+          const fi = ls.findIndex((l: any) => !l?.only_via_choice)
+          if (fi >= 0) {
+            lIdx = fi
+            found = true
+            break
+          }
+        }
+        if (!found) {
+          sIdx = 0
+          lIdx = 0
+        }
+        setSi(sIdx)
+        setLi(lIdx)
       } catch {
         if (alive) setScenes([])
       } finally {
@@ -99,16 +118,30 @@ export function StoryTester({
 
   const scenePos = (id: string) => scenes.findIndex((s) => s.id === id)
 
+  const isVisibleLine = (l: any) => !l?.only_via_choice
+
+  const firstVisibleInScene = (sIdx: number) => {
+    const ls = linesByScene[scenes[sIdx]?.id] || []
+    return ls.findIndex(isVisibleLine)
+  }
+
   const advance = () => {
     if (!scene) return
-    if (li < lines.length - 1) {
-      setLi(li + 1)
+    let next = li + 1
+    while (next < lines.length && !isVisibleLine(lines[next])) next++
+    if (next < lines.length) {
+      setLi(next)
       return
     }
-    if (si < scenes.length - 1) {
-      setSi(si + 1)
-      setLi(0)
-      return
+    let ns = si + 1
+    while (ns < scenes.length) {
+      const fi = firstVisibleInScene(ns)
+      if (fi >= 0) {
+        setSi(ns)
+        setLi(fi)
+        return
+      }
+      ns++
     }
     setOver(true)
   }
@@ -131,8 +164,9 @@ export function StoryTester({
     if (c.next_scene_id) {
       const pos = scenePos(c.next_scene_id)
       if (pos >= 0) {
+        const fi = firstVisibleInScene(pos)
         setSi(pos)
-        setLi(0)
+        setLi(fi >= 0 ? fi : 0)
         return
       }
     }
@@ -140,8 +174,19 @@ export function StoryTester({
   }
 
   const restart = () => {
-    setSi(0)
-    setLi(0)
+    // Posiciona na primeira fala visível.
+    let sIdx = 0
+    let lIdx = 0
+    for (; sIdx < scenes.length; sIdx++) {
+      const ls = linesByScene[scenes[sIdx]?.id] || []
+      const fi = ls.findIndex((l: any) => !l?.only_via_choice)
+      if (fi >= 0) {
+        lIdx = fi
+        break
+      }
+    }
+    setSi(sIdx < scenes.length ? sIdx : 0)
+    setLi(lIdx)
     setOver(false)
     setUnlockedZones([])
     setLastUnlockToast(null)
