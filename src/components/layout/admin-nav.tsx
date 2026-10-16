@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { href: '/receitas', label: 'Oficina / Craft', icon: Hammer, color: 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10' },
   { href: '/sincronizar', label: 'Sincronizar', icon: RefreshCw, color: 'text-sky-300 border-sky-500/40 bg-sky-500/10' },
   { href: '/usuarios', label: 'Usuários', icon: Users, color: 'text-pink-400 border-pink-500/40 bg-pink-500/10' },
+  { href: '/manutencao', label: 'Manutenção', icon: Wrench, color: 'text-red-300 border-red-500/40 bg-red-500/10' },
   { href: '/guia', label: 'Guia', icon: HelpCircle, color: 'text-zinc-300 border-zinc-500/40 bg-zinc-500/10' },
 ]
 
