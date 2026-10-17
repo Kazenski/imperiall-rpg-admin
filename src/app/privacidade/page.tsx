@@ -118,10 +118,10 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
         correção e anonimização de dados; portabilidade; informação sobre compartilhamentos; e
         eliminação dos seus dados. Basta escrever para{' '}
         <a
-          href="mailto:contato@imperiall.com.br"
+          href="mailto:kazenski.developer@gmail.com"
           className="text-amber-300 underline underline-offset-4 hover:text-amber-200"
         >
-          contato@imperiall.com.br
+          kazenski.developer@gmail.com
         </a>
         . Respondemos em até 15 dias.
       </>
@@ -163,10 +163,10 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
         <br />
         E-mail:{' '}
         <a
-          href="mailto:contato@imperiall.com.br"
+          href="mailto:kazenski.developer@gmail.com"
           className="text-amber-300 underline underline-offset-4 hover:text-amber-200"
         >
-          contato@imperiall.com.br
+          kazenski.developer@gmail.com
         </a>
       </>
     ),
