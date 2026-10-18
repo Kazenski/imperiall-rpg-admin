@@ -328,4 +328,5 @@ export default function BiPage() {
       </p>
     </div>
   )
-}
+}/ /   B I   a t u a l i z a d o :   1 0 / 1 8 / 2 0 2 6   1 3 : 5 9 : 5 9  
+ 
