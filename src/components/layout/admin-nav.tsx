@@ -30,6 +30,7 @@ const NAV_ITEMS = [
   { href: '/vassalos', label: 'Vassalos', icon: Shield, color: 'text-purple-400 border-purple-500/40 bg-purple-500/10' },
   { href: '/acoes-manuais', label: 'Ações Manuais', icon: Hammer, color: 'text-indigo-400 border-indigo-500/40 bg-indigo-500/10' },
   { href: '/sincronizar', label: 'Sincronizar', icon: RefreshCw, color: 'text-sky-300 border-sky-500/40 bg-sky-500/10' },
+  { href: '/suporte', label: 'Suporte', icon: HelpCircle, color: 'text-indigo-400 border-indigo-500/40 bg-indigo-500/10' },
   { href: '/usuarios', label: 'Usuários', icon: Users, color: 'text-pink-400 border-pink-500/40 bg-pink-500/10' },
   { href: '/manutencao', label: 'Manutenção', icon: Wrench, color: 'text-red-300 border-red-500/40 bg-red-500/10' },
   { href: '/atualizacoes', label: 'Atualizações', icon: Sparkles, color: 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10' },
