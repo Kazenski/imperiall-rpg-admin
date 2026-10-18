@@ -339,7 +339,13 @@ async function readAll(client: SupabaseClient, table: string) {
 }
 
 async function wipe(client: SupabaseClient, table: string) {
-  const { error } = await client.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  let query;
+  if (table === 'spirit_xp_table') {
+    query = client.from(table).delete().gte('level', 0);
+  } else {
+    query = client.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  }
+  const { error } = await query;
   if (error && !isMissingTableOrColumn(error)) {
     throw new Error(errMsg(`limpeza ${table}`, error));
   }
@@ -445,8 +451,9 @@ async function insertRows(client: SupabaseClient, table: string, rows: any[], up
     fixups = rows.filter((n) => n.requires_node_id).map((n) => ({ id: n.id, requires_node_id: n.requires_node_id }));
     payload = rows.map((n) => ({ ...n, requires_node_id: null }));
   }
+  const conflictCol = table === 'spirit_xp_table' ? 'level' : 'id';
   const query = upsert
-    ? client.from(table).upsert(payload, { onConflict: 'id' })
+    ? client.from(table).upsert(payload, { onConflict: conflictCol })
     : client.from(table).insert(payload);
   const { error } = await query;
   if (error) {
