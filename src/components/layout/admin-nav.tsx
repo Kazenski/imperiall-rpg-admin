@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   Package, Skull, Zap, Map, Waves, Gift, UserCheck, BookOpen,
   Sparkles, Swords, Network, Star, Hammer, Wrench, RefreshCw, Users, HelpCircle,
-  BarChart3, Store, Flame, PawPrint, Shield, Target, CalendarClock, ScrollText,
+  BarChart3, Store, Flame, PawPrint, Shield, Target, CalendarClock, ScrollText, Grid3x3,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { href: '/npcs', label: 'NPCs', icon: UserCheck, color: 'text-teal-400 border-teal-500/40 bg-teal-500/10' },
   { href: '/historias', label: 'Histórias', icon: BookOpen, color: 'text-indigo-400 border-indigo-500/40 bg-indigo-500/10' },
   { href: '/efeitos', label: 'Efeitos', icon: Sparkles, color: 'text-purple-400 border-purple-500/40 bg-purple-500/10' },
+  { href: '/pixel-editor', label: 'Pixel Art', icon: Grid3x3, color: 'text-green-300 border-green-500/40 bg-green-500/10' },
   { href: '/personagens', label: 'Heróis', icon: Swords, color: 'text-orange-400 border-orange-500/40 bg-orange-500/10' },
   { href: '/arvore', label: 'Árvore', icon: Network, color: 'text-lime-400 border-lime-500/40 bg-lime-500/10' },
   { href: '/constelacoes', label: 'Constelações', icon: Star, color: 'text-fuchsia-400 border-fuchsia-500/40 bg-fuchsia-500/10' },
