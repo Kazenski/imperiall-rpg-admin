@@ -329,5 +329,4 @@ export default function BiPage() {
     </div>
   )
 }// BI atualizado: 10/18/2026 13:59:59
-/ /   B I   m e l h o r a d o   -   2 0 2 6 - 1 0 - 1 8  
- 
+// BI melhorado - 2026-10-18
