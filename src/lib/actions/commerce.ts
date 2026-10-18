@@ -16,7 +16,7 @@ function ok(path: string) {
   revalidatePath(path)
 }
 
-function missingColumn(error: { message?: string; code?: string }) {
+async function missingColumn(error: { message?: string; code?: string }) {
   const code = error?.code || ''
   const msg = (error?.message || '').toLowerCase()
   return code === '42703' || code === 'PGRST204' || msg.includes('column')

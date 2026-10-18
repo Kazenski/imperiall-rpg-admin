@@ -108,9 +108,9 @@ export function Counters({ total, active, shown, totalLabel = 'registros', items
           <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 inline-flex items-center gap-1 font-medium">
             <CheckCircle2 size={11} /> {active} ativos
           </span>
-          {total - active > 0 && (
+          {(total ?? 0) - active > 0 && (
             <span className="px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30 inline-flex items-center gap-1 font-medium">
-              <XCircle size={11} /> {total - active} inativos
+              <XCircle size={11} /> {(total ?? 0) - active} inativos
             </span>
           )}
         </>
