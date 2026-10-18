@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import { Flame, Plus, Pencil, Trash2, Sparkles, ScrollText, Utensils, TrendingUp } from 'lucide-react'
+import { Flame, Plus, Pencil, Trash2, Sparkles, ScrollText, Utensils, TrendingUp, X } from 'lucide-react'
 
 import {
   listSpiritWeapons, createSpiritWeapon, updateSpiritWeapon, deleteSpiritWeapon,
@@ -12,6 +12,8 @@ import {
 } from '@/lib/actions/commerce'
 import { listItems } from '@/lib/actions/items'
 import { ImageUpload } from '@/components/ui/image-upload'
+import { Tooltip } from '@/components/ui/tooltip'
+import { DetailModal } from '@/components/ui/detail-modal'
 import { Counters } from '@/components/ui/data-table'
 
 const EFFECT_TYPES = [
@@ -46,10 +48,10 @@ export default function ArmaEspiritualPage() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-lg font-bold text-amber-300 flex items-center gap-2">
-          <Flame size={18} /> Arma Espiritual
-        </h1>
-        <p className="text-[11px] text-slate-500">
+        <h2 className="text-2xl font-semibold text-amber-400 flex items-center gap-2">
+          <Flame size={22} /> Arma Espiritual
+        </h2>
+        <p className="text-sm text-slate-400 mt-1">
           Templates prontos, habilidades exclusivas por nível, dieta de alimentação e progressão editável.
         </p>
       </header>
@@ -57,7 +59,7 @@ export default function ArmaEspiritualPage() {
       <div className="grid lg:grid-cols-[240px_1fr] gap-4">
         <aside className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] text-slate-400 font-bold uppercase">Templates</p>
+            <p className="text-sm text-slate-400 font-bold uppercase">Templates</p>
             <button onClick={() => { setActive(null); setTab('armas') }}
               className="p-1 rounded border border-slate-700 text-amber-400 hover:border-amber-500/60">
               <Plus size={12} />
@@ -79,13 +81,13 @@ export default function ArmaEspiritualPage() {
                     <Flame size={14} className="text-amber-600" />
                   </div>}
               <div className="min-w-0">
-                <p className="text-xs font-bold text-amber-200 truncate">{w.name}</p>
-                <p className="text-[10px] text-slate-500 truncate">{w.class_name || '—'}</p>
+                <p className="text-sm font-bold text-amber-200 truncate">{w.name}</p>
+                <p className="text-xs text-slate-500 truncate">{w.class_name || '—'}</p>
               </div>
             </button>
           ))}
           {weapons.length === 0 && (
-            <p className="text-[11px] text-slate-600 px-2">Nenhum template ainda.</p>
+            <p className="text-sm text-slate-600 px-2">Nenhum template ainda.</p>
           )}
         </aside>
 
@@ -102,13 +104,13 @@ export default function ArmaEspiritualPage() {
                 key={key}
                 disabled={key !== 'armas' && key !== 'xp' && !active}
                 onClick={() => setTab(key as Tab)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border transition disabled:opacity-40 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm border transition disabled:opacity-40 ${
                   tab === key
                     ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
                     : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'
                 }`}
               >
-                <Icon size={13} /> {label}
+                <Icon size={14} /> {label}
               </button>
             ))}
           </div>
@@ -123,6 +125,8 @@ export default function ArmaEspiritualPage() {
     </div>
   )
 }
+
+// ==================== TEMPLATE ====================
 
 function WeaponForm({ editing, onDone }: any) {
   const [show, setShow] = useState(false)
@@ -139,64 +143,84 @@ function WeaponForm({ editing, onDone }: any) {
       {!show && editing && (
         <div className="flex gap-2">
           <button onClick={() => setShow(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs bg-amber-600 hover:bg-amber-500 text-white">
-            <Pencil size={12} /> Editar template
+            className="flex items-center gap-1.5 px-4 py-2 rounded bg-amber-500 text-slate-900 font-medium hover:bg-amber-400 transition">
+            <Pencil size={14} /> Editar template
           </button>
           <button onClick={() => start(async () => {
             if (!confirm(`Apagar "${editing.name}"?`)) return
             await deleteSpiritWeapon(editing.id)
             onDone()
-          })} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border border-red-800 text-red-400 hover:bg-red-900/20">
-            <Trash2 size={12} /> Apagar
+          })} className="flex items-center gap-1.5 px-4 py-2 rounded border border-red-800 text-red-400 hover:bg-red-900/20">
+            <Trash2 size={14} /> Apagar
           </button>
         </div>
       )}
 
       {(!editing || show) && (
-        <form action={(fd: FormData) => start(async () => {
-          setErr('')
-          try {
-            if (editing) await updateSpiritWeapon(editing.id, fd)
-            else await createSpiritWeapon(fd)
-            setShow(false); onDone()
-          } catch (e: any) { setErr(e?.message ?? String(e)) }
-        })} className="border border-slate-700 rounded bg-slate-900/60 p-4 space-y-3">
+        <div className="border border-slate-700 rounded bg-slate-900/60 p-4 space-y-3">
+          <h3 className="text-lg font-bold text-amber-400">{editing ? 'Editar' : 'Novo'} Template</h3>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Nome"><input name="name" defaultValue={f.name} required className={inputCls} /></Field>
-            <Field label="Slug"><input name="slug" defaultValue={f.slug} required className={inputCls} /></Field>
-            <Field label="Classe"><input name="class_name" defaultValue={f.class_name ?? ''} className={inputCls} /></Field>
-            <Field label="Ordem"><input name="sort_order" type="number" defaultValue={String(f.sort_order)} className={inputCls} /></Field>
+            <div>
+              <label className="text-sm">Nome <Tooltip text="Nome da arma espiritual exibido ao jogador" /></label>
+              <input name="name" defaultValue={f.name} required className={inputCls} />
+            </div>
+            <div>
+              <label className="text-sm">Slug <Tooltip text="Identificador único (sem espaços). Ex: espada_vulcanica" /></label>
+              <input name="slug" defaultValue={f.slug} required className={inputCls} />
+            </div>
+            <div>
+              <label className="text-sm">Classe <Tooltip text="Classe elemental da arma. Ex: Vulcânica, Glacial, Sombria" /></label>
+              <input name="class_name" defaultValue={f.class_name ?? ''} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-sm">Ordem <Tooltip text="Ordem de exibição (menor = primeiro)" /></label>
+              <input name="sort_order" type="number" defaultValue={String(f.sort_order)} className={inputCls} />
+            </div>
           </div>
-          <Field label="Descrição"><textarea name="description" rows={2} defaultValue={f.description ?? ''} className={inputCls} /></Field>
-          <Field label="Imagem do espírito">
+          <div>
+            <label className="text-sm">Descrição <Tooltip text="Descrição da arma exibida ao jogador" /></label>
+            <textarea name="description" rows={2} defaultValue={f.description ?? ''} className={inputCls} />
+          </div>
+          <div>
+            <label className="text-sm">Imagem <Tooltip text="Arte da arma espiritual exibida no inventário e equipada" /></label>
             <ImageUpload label="Imagem" fieldName="image_url" folder="spirit" value={f.image_url ?? ''}
               tooltipText="Arte do espírito" hint="PNG/JPG quadrado"
-              onChange={(url) => { (document.getElementById('sp-img') as HTMLInputElement). value = url }} />
+              onChange={(url) => { (document.getElementById('sp-img') as HTMLInputElement).value = url }} />
             <input type="hidden" id="sp-img" name="image_url" defaultValue={f.image_url ?? ''} />
-          </Field>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Dano base"><input name="base_damage" type="number" defaultValue={String(f.base_damage)} className={inputCls} /></Field>
-            <Field label="Dano especial"><input name="special_damage" type="number" defaultValue={String(f.special_damage)} className={inputCls} /></Field>
-            <Field label="% XP absorvido"><input name="xp_rate_percent" type="number" defaultValue={String(f.xp_rate_percent)} className={inputCls} /></Field>
           </div>
-          <label className="flex items-center gap-2 text-xs">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="text-sm">Dano base <Tooltip text="Dano base da arma (cresce com o nível)" /></label>
+              <input name="base_damage" type="number" defaultValue={String(f.base_damage)} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-sm">Dano especial <Tooltip text="Dano do efeito elemental (fogo, gelo, etc)" /></label>
+              <input name="special_damage" type="number" defaultValue={String(f.special_damage)} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-sm">% XP absorvido <Tooltip text="Porcentagem do XP do herói que vai para a arma" /></label>
+              <input name="xp_rate_percent" type="number" defaultValue={String(f.xp_rate_percent)} className={inputCls} />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="fire_effect" defaultChecked={f.fire_effect} />
-            Efeito de fogo dourado
+            Efeito de fogo dourado <Tooltip text="Mostra efeito visual dourado no inventário e equipado" />
           </label>
-          <label className="flex items-center gap-2 text-xs">
+          <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="is_active" defaultChecked={f.is_active} /> Ativo
           </label>
-          {err && <p className="text-red-400 text-xs">{err}</p>}
+          {err && <p className="text-red-400 text-sm">{err}</p>}
           <div className="flex gap-2">
-            <button className="px-4 py-2 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold">Salvar</button>
-            {editing && <button type="button" onClick={() => setShow(false)}
-              className="px-4 py-2 rounded border border-slate-700 text-slate-400 text-xs">Cancelar</button>}
+            <button className="px-4 py-2 rounded bg-amber-500 text-slate-900 font-medium hover:bg-amber-400 transition">Salvar</button>
+            {editing && <button type="button" onClick={() => setShow(false)} className="px-4 py-2 border border-slate-600 rounded hover:bg-slate-800 transition">Cancelar</button>}
           </div>
-        </form>
+        </div>
       )}
     </div>
   )
 }
+
+// ==================== HABILIDADES ====================
 
 function Skills({ weapon }: any) {
   const [rows, setRows] = useState<any[]>([])
@@ -220,11 +244,11 @@ function Skills({ weapon }: any) {
     <div className="space-y-2">
       <div className="flex justify-end">
         <button onClick={() => { setEditing(null); setShow(true) }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs bg-amber-600 hover:bg-amber-500 text-white">
-          <Plus size={13} /> Nova habilidade
+          className="flex items-center gap-1.5 px-4 py-2 rounded bg-amber-500 text-slate-900 font-medium hover:bg-amber-400 transition">
+          <Plus size={14} /> Nova habilidade
         </button>
       </div>
-      {rows.length === 0 && <p className="text-xs text-slate-600">Nenhuma habilidade neste template.</p>}
+      {rows.length === 0 && <p className="text-sm text-slate-600">Nenhuma habilidade neste template.</p>}
       <div className="grid gap-2">
         {rows.map((s) => (
           <div key={s.id} className="border border-slate-700 rounded bg-slate-900/60 p-3 flex gap-3">
@@ -235,10 +259,10 @@ function Skills({ weapon }: any) {
                   </div>}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-amber-200">{s.name}
-                <span className="ml-2 text-[10px] text-slate-500">nível {s.unlock_level}</span></p>
-              <p className="text-[10px] text-slate-400">{s.description}</p>
-              <p className="text-[10px] text-slate-500">dano {s.base_damage} +{s.damage_per_level}/nível</p>
+              <p className="text-sm font-bold text-amber-200">{s.name}
+                <span className="ml-2 text-xs text-slate-500">nível {s.unlock_level}</span></p>
+              <p className="text-xs text-slate-400">{s.description}</p>
+              <p className="text-xs text-slate-500">dano {s.base_damage} +{s.damage_per_level}/nível</p>
             </div>
             <div className="flex flex-col gap-1">
               <button onClick={() => { setEditing(s); setShow(true) }}
@@ -250,34 +274,50 @@ function Skills({ weapon }: any) {
         ))}
       </div>
       {show && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <form action={(fd: FormData) => start(async () => {
-            fd.set('spirit_weapon_id', weapon.id)
-            if (editing) await updateSpiritSkill(editing.id, fd)
-            else await createSpiritSkill(fd)
-            setShow(false); await reload()
-          })} className="bg-slate-900 border border-slate-700 rounded-lg p-5 w-full max-w-xl space-y-3">
-            <h3 className="font-bold text-amber-300">Habilidade do espírito</h3>
-            <Field label="Nome"><input name="name" defaultValue={f.name} required className={inputCls} /></Field>
-            <Field label="Descrição"><textarea name="description" rows={2} defaultValue={f.description} className={inputCls} /></Field>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Nível para liberar"><input name="unlock_level" type="number" defaultValue={String(f.unlock_level)} className={inputCls} /></Field>
-              <Field label="Dano base"><input name="base_damage" type="number" defaultValue={String(f.base_damage)} className={inputCls} /></Field>
-              <Field label="Dano por nível"><input name="damage_per_level" type="number" defaultValue={String(f.damage_per_level)} className={inputCls} /></Field>
-              <Field label="Tipo"><select name="effect_type" defaultValue={f.effect_type} className={inputCls}>
-                {EFFECT_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select></Field>
+        <div className="border border-slate-700 rounded bg-slate-900/60 p-4 space-y-3">
+          <h3 className="text-lg font-bold text-amber-400">{editing ? 'Editar' : 'Nova'} Habilidade</h3>
+          <div>
+            <label className="text-sm">Nome <Tooltip text="Nome da habilidade exibido ao jogador" /></label>
+            <input name="name" defaultValue={f.name} required className={inputCls} />
+          </div>
+          <div>
+            <label className="text-sm">Descrição <Tooltip text="Descrição do efeito da habilidade" /></label>
+            <textarea name="description" rows={2} defaultValue={f.description} className={inputCls} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="text-sm">Nível para liberar <Tooltip text="Nível da arma necessário para desbloquear esta habilidade" /></label>
+              <input name="unlock_level" type="number" defaultValue={String(f.unlock_level)} className={inputCls} />
             </div>
-            <label className="flex items-center gap-2 text-xs">
-              <input type="checkbox" name="is_active" defaultChecked={f.is_active} /> Ativa
-            </label>
-            <button className="w-full py-2 rounded bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold">Salvar</button>
-          </form>
+            <div>
+              <label className="text-sm">Dano base <Tooltip text="Dano base da habilidade (cresce com o nível da arma)" /></label>
+              <input name="base_damage" type="number" defaultValue={String(f.base_damage)} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-sm">Dano por nível <Tooltip text="Quanto o dano aumenta por nível da arma" /></label>
+              <input name="damage_per_level" type="number" defaultValue={String(f.damage_per_level)} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-sm">Tipo <Tooltip text="Tipo de efeito visual da habilidade" /></label>
+              <select name="effect_type" defaultValue={f.effect_type} className={inputCls}>
+                {EFFECT_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="is_active" defaultChecked={f.is_active} /> Ativa
+          </label>
+          <div className="flex gap-2">
+            <button className="px-4 py-2 rounded bg-amber-500 text-slate-900 font-medium hover:bg-amber-400 transition">Salvar</button>
+            <button type="button" onClick={() => setShow(false)} className="px-4 py-2 border border-slate-600 rounded hover:bg-slate-800 transition">Cancelar</button>
+          </div>
         </div>
       )}
     </div>
   )
 }
+
+// ==================== DIETA ====================
 
 function Diet({ weapon }: any) {
   const [rows, setRows] = useState<any[]>([])
@@ -294,7 +334,7 @@ function Diet({ weapon }: any) {
 
   return (
     <div className="space-y-3">
-      <p className="text-[11px] text-slate-500">Itens que alimentam o espírito com XP específico.</p>
+      <p className="text-sm text-slate-500">Itens que alimentam o espírito com XP específico.</p>
       <form action={(fd: FormData) => start(async () => {
         fd.set('spirit_weapon_id', weapon.id)
         if (editing) await updateSpiritDiet(editing.id, fd)
@@ -302,17 +342,21 @@ function Diet({ weapon }: any) {
         setEditing(null); await reload()
       })} className="border border-slate-700 rounded bg-slate-900/60 p-3 flex flex-wrap gap-2 items-end">
         <div className="flex-1 min-w-[180px]">
-          <Field label="Item"><select name="item_id" defaultValue={editing?.item_id ?? ''} required className={inputCls}>
+          <label className="text-sm">Item <Tooltip text="Item da mochila que alimenta o espírito" /></label>
+          <select name="item_id" defaultValue={editing?.item_id ?? ''} required className={inputCls}>
             <option value="">— escolha —</option>
             {items.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.rarity})</option>)}
-          </select></Field>
+          </select>
         </div>
-        <div className="w-32"><Field label="XP/unidade"><input name="xp_per_unit" type="number" defaultValue={String(editing?.xp_per_unit ?? 10)} className={inputCls} /></Field></div>
-        <button className="px-3 py-2 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold">Adicionar</button>
+        <div className="w-32">
+          <label className="text-sm">XP/unidade <Tooltip text="Quanto XP o espírito ganha por item consumido" /></label>
+          <input name="xp_per_unit" type="number" defaultValue={String(editing?.xp_per_unit ?? 10)} className={inputCls} />
+        </div>
+        <button className="px-3 py-2 rounded bg-amber-500 text-slate-900 font-medium hover:bg-amber-400 transition">Adicionar</button>
       </form>
       <div className="grid gap-1.5">
         {rows.map((d) => (
-          <div key={d.id} className="flex items-center gap-2 border border-slate-800 rounded px-2.5 py-1.5 text-xs">
+          <div key={d.id} className="flex items-center gap-2 border border-slate-800 rounded px-2.5 py-1.5 text-sm">
             <span className="flex-1">{d.items?.name}</span>
             <span className="text-amber-300 font-bold">+{d.xp_per_unit} XP</span>
             <button onClick={() => setEditing(d)} className="p-1 rounded border border-slate-700 text-amber-400"><Pencil size={10} /></button>
@@ -325,6 +369,8 @@ function Diet({ weapon }: any) {
   )
 }
 
+// ==================== PROGRESSÃO ====================
+
 function Bonuses({ weapon }: any) {
   const [rows, setRows] = useState<any[]>([])
   const [, start] = useTransition()
@@ -333,21 +379,27 @@ function Bonuses({ weapon }: any) {
 
   return (
     <div className="space-y-3">
-      <p className="text-[11px] text-slate-500">Bônus por nível do espírito.</p>
+      <p className="text-sm text-slate-500">Bônus por nível do espírito.</p>
       <div className="border border-slate-800 rounded overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead className="bg-slate-900 text-slate-400">
-            <tr className="text-left"><Th>Nível</Th><Th>+Dano base</Th><Th>+Dano especial</Th><Th>XP p/ próximo</Th><Th /></tr>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left">
+              <th className="px-2 py-1.5">Nível</th>
+              <th className="px-2 py-1.5">+Dano base</th>
+              <th className="px-2 py-1.5">+Dano especial</th>
+              <th className="px-2 py-1.5">XP p/ próximo</th>
+              <th className="px-2 py-1.5"></th>
+            </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-slate-800">
-                <Td className="font-bold text-amber-300">{r.level}</Td>
-                <Td>{r.damage_base_bonus}</Td>
-                <Td>{r.damage_special_bonus}</Td>
-                <Td>{r.xp_to_next}</Td>
-                <Td><button onClick={() => start(async () => { await deleteSpiritBonus(r.id); await reload() })}
-                  className="p-1 rounded border border-slate-700 text-red-400"><Trash2 size={10} /></button></Td>
+                <td className="px-2 py-1.5 font-bold text-amber-300">{r.level}</td>
+                <td className="px-2 py-1.5">{r.damage_base_bonus}</td>
+                <td className="px-2 py-1.5">{r.damage_special_bonus}</td>
+                <td className="px-2 py-1.5">{r.xp_to_next}</td>
+                <td className="px-2 py-1.5"><button onClick={() => start(async () => { await deleteSpiritBonus(r.id); await reload() })}
+                  className="p-1 rounded border border-slate-700 text-red-400"><Trash2 size={10} /></button></td>
               </tr>
             ))}
           </tbody>
@@ -356,6 +408,8 @@ function Bonuses({ weapon }: any) {
     </div>
   )
 }
+
+// ==================== TABELA XP ====================
 
 function XpTable() {
   const [rows, setRows] = useState<any[]>([])
@@ -365,17 +419,20 @@ function XpTable() {
 
   return (
     <div className="space-y-3">
-      <p className="text-[11px] text-slate-500">XP total acumulado para alcançar cada nível.</p>
+      <p className="text-sm text-slate-500">XP total acumulado para alcançar cada nível.</p>
       <div className="border border-slate-800 rounded overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead className="bg-slate-900 text-slate-400">
-            <tr className="text-left"><Th>Nível</Th><Th>XP acumulado</Th></tr>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left">
+              <th className="px-2 py-1.5">Nível</th>
+              <th className="px-2 py-1.5">XP acumulado</th>
+            </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.level} className="border-t border-slate-800">
-                <Td className="font-bold text-amber-300">{r.level}</Td>
-                <Td>{Number(r.xp_required).toLocaleString('pt-BR')}</Td>
+                <td className="px-2 py-1.5 font-bold text-amber-300">{r.level}</td>
+                <td className="px-2 py-1.5">{Number(r.xp_required).toLocaleString('pt-BR')}</td>
               </tr>
             ))}
           </tbody>
@@ -385,10 +442,6 @@ function XpTable() {
   )
 }
 
-const inputCls = 'w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-600 text-xs text-slate-200 outline-none focus:border-amber-500'
+// ==================== HELPERS ====================
 
-function Field({ label, children }: any) {
-  return <div className="space-y-1"><label className="block text-[11px] text-slate-400">{label}</label>{children}</div>
-}
-function Th({ children }: any) { return <th className="px-2 py-1.5 font-bold uppercase text-[10px]">{children}</th> }
-function Td({ children, className = '' }: any) { return <td className={`px-2 py-1.5 ${className}`}>{children}</td> }
+const inputCls = 'w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-600 text-sm text-slate-200 outline-none focus:border-amber-500'
