@@ -63,7 +63,7 @@ export async function listPlayerCharactersForBi() {
 export async function listEquippedInventory() {
   const { data, error } = await supabase
     .from('player_inventory')
-    .select('id,player_id,item_id,quantity,is_equipped,equip_slot,upgrade_level, items(name,type,slot,is_active)')
+    .select('id,player_id,item_id,quantity,is_equipped,upgrade_level, items(name,type,slot,is_active)')
     .eq('is_equipped', true)
   if (error) throw error
   return data || []
@@ -72,7 +72,7 @@ export async function listEquippedInventory() {
 export async function listOnlinePlayers() {
   const { data, error } = await supabase
     .from('player_online')
-    .select('player_id,last_seen_at,is_online,session_id,device_info, profiles(username,display_name,level)')
+    .select('player_id,last_seen_at,is_online,session_id,device_info')
     .order('last_seen_at', { ascending: false })
     .limit(200)
   if (error) throw error

@@ -316,6 +316,12 @@ export default function BiPage() {
     return profiles.map((p) => ({ x: Number(p.level) || 0, y: Number(p.gold) || 0, label: p.display_name || p.username }))
   }, [profiles])
 
+  const profileMap = useMemo(() => {
+    const m = new Map<string, any>()
+    profiles.forEach((p: any) => m.set(String(p.id), p))
+    return m
+  }, [profiles])
+
   const totalActive = menuStats.reduce((s, m) => s + m.active, 0)
   const totalInactive = menuStats.reduce((s, m) => s + m.inactive, 0)
   const totalRecords = menuStats.reduce((s, m) => s + m.total, 0)
@@ -531,13 +537,16 @@ export default function BiPage() {
             </h3>
             <div className="space-y-1 text-xs max-h-60 overflow-y-auto">
               {onlinePlayers.length === 0 && <p className="text-zinc-500">Nenhum registro.</p>}
-              {onlinePlayers.map((p: any, i) => (
-                <div key={i} className="flex justify-between border-b border-zinc-800/40 py-1">
-                  <span className="text-zinc-200 truncate">{p.profiles?.display_name || p.profiles?.username || p.player_id?.slice(0, 8)}</span>
-                  <span className={p.is_online ? 'text-emerald-300' : 'text-zinc-500'}>{p.is_online ? 'online' : 'offline'}</span>
-                  <span className="text-zinc-500">{p.last_seen_at ? new Date(p.last_seen_at).toLocaleString() : '—'}</span>
-                </div>
-              ))}
+              {onlinePlayers.map((p: any, i) => {
+                const prof = profileMap.get(String(p.player_id))
+                return (
+                  <div key={i} className="flex justify-between border-b border-zinc-800/40 py-1">
+                    <span className="text-zinc-200 truncate">{prof?.display_name || prof?.username || p.player_id?.slice(0, 8)}</span>
+                    <span className={p.is_online ? 'text-emerald-300' : 'text-zinc-500'}>{p.is_online ? 'online' : 'offline'}</span>
+                    <span className="text-zinc-500">{p.last_seen_at ? new Date(p.last_seen_at).toLocaleString() : '—'}</span>
+                  </div>
+                )
+              })}
             </div>
           </div>
           <div className="border rounded-xl p-4 bg-zinc-900/60">
