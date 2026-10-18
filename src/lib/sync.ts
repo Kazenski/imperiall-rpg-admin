@@ -454,7 +454,9 @@ async function insertRows(client: SupabaseClient, table: string, rows: any[], up
     fixups = rows.filter((n) => n.requires_node_id).map((n) => ({ id: n.id, requires_node_id: n.requires_node_id }));
     payload = rows.map((n) => ({ ...n, requires_node_id: null }));
   }
-  const conflictCol = NO_ID_TABLES.has(table) ? 'level' : 'id';
+  const conflictCol =
+    NO_ID_TABLES.has(table) ? 'level' :
+    table === 'floating_menus' ? 'key' : 'id';
   const query = upsert
     ? client.from(table).upsert(payload, { onConflict: conflictCol })
     : client.from(table).insert(payload);
