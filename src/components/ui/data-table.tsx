@@ -73,9 +73,31 @@ export function Th({ label, k, active, dir, onClick }: {
 }
 
 /** Linha de contadores colorida: total, ativos/inativos e resultado da busca. */
-export function Counters({ total, active, shown, totalLabel = 'registros' }: {
-  total: number; active?: number; shown?: number; totalLabel?: string;
+const CHIPS = [
+  'px-2.5 py-1 rounded-full inline-flex items-center gap-1 border font-medium',
+  'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+  'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+  'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  'bg-sky-500/15 text-sky-300 border-sky-500/30',
+  'bg-rose-500/15 text-rose-300 border-rose-500/30',
+  'bg-purple-500/15 text-purple-300 border-purple-500/30',
+]
+
+export function Counters({ total, active, shown, totalLabel = 'registros', items }: {
+  total?: number; active?: number; shown?: number; totalLabel?: string;
+  items?: Array<{ label: string; value: string | number }>;
 }) {
+  if (items) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        {items.map((it, i) => (
+          <span key={it.label} className={CHIPS[i % CHIPS.length]}>
+            {it.label}: <b className="text-white">{it.value}</b>
+          </span>
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
       <span className="px-2.5 py-1 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 inline-flex items-center gap-1 font-medium">
@@ -86,14 +108,14 @@ export function Counters({ total, active, shown, totalLabel = 'registros' }: {
           <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 inline-flex items-center gap-1 font-medium">
             <CheckCircle2 size={11} /> {active} ativos
           </span>
-          {total - active > 0 && (
+          {(total ?? 0) - active > 0 && (
             <span className="px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30 inline-flex items-center gap-1 font-medium">
-              <XCircle size={11} /> {total - active} inativos
+              <XCircle size={11} /> {(total ?? 0) - active} inativos
             </span>
           )}
         </>
       )}
-      {shown !== undefined && shown !== total && (
+      {shown !== undefined && total !== undefined && shown !== total && (
         <span className="px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium">
           Filtrados: {shown}
         </span>

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   Package, Skull, Zap, Map, Waves, Gift, UserCheck, BookOpen,
   Sparkles, Swords, Network, Star, Hammer, Wrench, RefreshCw, Users, HelpCircle,
-  BarChart3,
+  BarChart3, Store, Flame, PawPrint,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -24,6 +24,9 @@ const NAV_ITEMS = [
   { href: '/constelacoes', label: 'Constelações', icon: Star, color: 'text-fuchsia-400 border-fuchsia-500/40 bg-fuchsia-500/10' },
   { href: '/profissoes', label: 'Profissões', icon: Wrench, color: 'text-amber-300 border-amber-500/40 bg-amber-500/10' },
   { href: '/receitas', label: 'Oficina / Craft', icon: Hammer, color: 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10' },
+  { href: '/comercio', label: 'Comércio', icon: Store, color: 'text-yellow-300 border-yellow-500/40 bg-yellow-500/10' },
+  { href: '/arma-espiritual', label: 'Arma Espiritual', icon: Flame, color: 'text-orange-400 border-orange-500/40 bg-orange-500/10' },
+  { href: '/pets', label: 'Pets', icon: PawPrint, color: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' },
   { href: '/sincronizar', label: 'Sincronizar', icon: RefreshCw, color: 'text-sky-300 border-sky-500/40 bg-sky-500/10' },
   { href: '/usuarios', label: 'Usuários', icon: Users, color: 'text-pink-400 border-pink-500/40 bg-pink-500/10' },
   { href: '/manutencao', label: 'Manutenção', icon: Wrench, color: 'text-red-300 border-red-500/40 bg-red-500/10' },
