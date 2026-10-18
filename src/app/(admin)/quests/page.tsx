@@ -3,14 +3,16 @@
 import { useEffect, useState } from 'react'
 import {
   listQuests, listQuestTypes, listRewardChests,
-  createQuest, updateQuest, deleteQuest, toggleQuest, createQuestType, createRewardChest,
+  createQuest, updateQuest, deleteQuest, toggleQuest, createQuestType, deleteQuestType, createRewardChest, deleteRewardChest,
 } from '@/lib/actions/quests'
+import { ImageUpload } from '@/components/ui/image-upload'
 
 export default function QuestsPage() {
   const [quests, setQuests] = useState<any[]>([])
   const [types, setTypes] = useState<any[]>([])
   const [chests, setChests] = useState<any[]>([])
   const [editing, setEditing] = useState<any>(null)
+  const [iconUrl, setIconUrl] = useState('')
   const [loading, setLoading] = useState(true)
 
   const load = async () => {
@@ -23,6 +25,7 @@ export default function QuestsPage() {
   }
 
   useEffect(() => { load() }, [])
+  useEffect(() => { setIconUrl(editing?.icon_url || '') }, [editing])
 
   return (
     <div className="space-y-8">
@@ -46,7 +49,15 @@ export default function QuestsPage() {
           <input name="icon_url" placeholder="Ícone URL" className="border rounded px-2.5 py-1.5 bg-background" />
           <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">Criar tipo</button>
         </form>
-        <div className="mt-2 text-xs text-zinc-400">{types.map((t) => t.name).join(', ')}</div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {types.map((t) => (
+            <div key={t.id} className="flex items-center gap-2 border rounded-lg px-2.5 py-1.5 bg-zinc-800/60">
+              {t.icon_url && <img src={t.icon_url} alt={t.name} className="w-6 h-6 object-contain" />}
+              <span className="text-xs text-zinc-200">{t.name}</span>
+              <button onClick={async () => { if (confirm('Excluir tipo?')) { await deleteQuestType(t.id); await load() } }} className="text-xs text-red-300">✕</button>
+            </div>
+          ))}
+        </div>
       </details>
 
       {/* Baús */}
@@ -68,7 +79,15 @@ export default function QuestsPage() {
           <input name="rewards" placeholder='[{"type":"gold","amount":100}]' className="border rounded px-2.5 py-1.5 bg-background" />
           <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">Criar baú</button>
         </form>
-        <div className="mt-2 text-xs text-zinc-400">{chests.map((c) => c.name).join(', ')}</div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {chests.map((c) => (
+            <div key={c.id} className="flex items-center gap-2 border rounded-lg px-2.5 py-1.5 bg-zinc-800/60">
+              {c.icon_url && <img src={c.icon_url} alt={c.name} className="w-6 h-6 object-contain" />}
+              <span className="text-xs text-zinc-200">{c.name}</span>
+              <button onClick={async () => { if (confirm('Excluir baú?')) { await deleteRewardChest(c.id); await load() } }} className="text-xs text-red-300">✕</button>
+            </div>
+          ))}
+        </div>
       </details>
 
       {/* Quest form */}
@@ -80,6 +99,7 @@ export default function QuestsPage() {
           else await createQuest(fd)
           ;(e.target as HTMLFormElement).reset()
           setEditing(null)
+          setIconUrl('')
           await load()
         }}
         className="border-2 border-amber-500/30 rounded-xl p-5 space-y-3 bg-amber-950/10"
@@ -94,9 +114,17 @@ export default function QuestsPage() {
             <label className="text-sm">Slug</label>
             <input name="slug" required defaultValue={editing?.slug || ''} className="w-full border rounded px-2.5 py-1.5 bg-background" />
           </div>
-          <div>
-            <label className="text-sm">Ícone URL</label>
-            <input name="icon_url" defaultValue={editing?.icon_url || ''} className="w-full border rounded px-2.5 py-1.5 bg-background" />
+          <div className="md:col-span-3">
+            <ImageUpload
+              label="Ícone da quest"
+              fieldName="icon_url"
+              tooltipText="Upload do ícone; redimensionado e otimizado."
+              folder="quests"
+              value={iconUrl}
+              onChange={setIconUrl}
+              hint="PNG/JPG/WEBP. Redimensionado para 256px."
+              forceSize={256}
+            />
           </div>
         </div>
         <div>
@@ -172,6 +200,26 @@ export default function QuestsPage() {
           {editing && <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 border rounded-lg">Cancelar</button>}
         </div>
       </form>
+
+      <div className="border rounded-xl p-4 bg-zinc-900/60">
+        <h3 className="font-semibold text-amber-300 mb-3">Grupos de Quest (por recorrência)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          {['daily','weekly','story','event','none'].map((rec) => (
+            <div key={rec} className="border rounded-lg p-3 bg-zinc-800/40">
+              <div className="text-sm font-semibold text-zinc-200 mb-2 capitalize">{rec === 'none' ? 'Únicas' : rec === 'daily' ? 'Diárias' : rec === 'weekly' ? 'Semanais' : rec === 'story' ? 'História' : 'Evento'}</div>
+              <div className="flex flex-wrap gap-2">
+                {quests.filter((q) => q.recurrence === rec).map((q) => (
+                  <div key={q.id} className="flex items-center gap-1 border rounded px-2 py-1 bg-zinc-900/60" title={q.name}>
+                    {q.icon_url ? <img src={q.icon_url} alt={q.name} className="w-5 h-5 object-contain" /> : <span className="w-5 h-5 rounded bg-zinc-700" />}
+                    <span className="text-[10px] text-zinc-300 truncate max-w-[80px]">{q.name}</span>
+                  </div>
+                ))}
+                {quests.filter((q) => q.recurrence === rec).length === 0 && <span className="text-xs text-zinc-500">vazio</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="space-y-2">
         <h3 className="font-semibold text-zinc-300">Quests cadastradas</h3>

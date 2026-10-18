@@ -6,11 +6,13 @@ import {
   deleteMarketingEvent, toggleMarketingEvent,
 } from '@/lib/actions/marketing-events'
 import { listItems } from '@/lib/actions/items'
+import { ImageUpload } from '@/components/ui/image-upload'
 
 export default function EventosMarketingPage() {
   const [items, setItems] = useState<any[]>([])
   const [catalogItems, setCatalogItems] = useState<any[]>([])
   const [editing, setEditing] = useState<any>(null)
+  const [iconUrl, setIconUrl] = useState('')
   const [loading, setLoading] = useState(true)
 
   const load = async () => {
@@ -22,6 +24,7 @@ export default function EventosMarketingPage() {
   }
 
   useEffect(() => { load() }, [])
+  useEffect(() => { setIconUrl(editing?.icon_url || '') }, [editing])
 
   return (
     <div className="space-y-8">
@@ -35,6 +38,7 @@ export default function EventosMarketingPage() {
           else await createMarketingEvent(fd)
           ;(e.target as HTMLFormElement).reset()
           setEditing(null)
+          setIconUrl('')
           await load()
         }}
         className="border-2 border-amber-500/30 rounded-xl p-5 space-y-3 bg-amber-950/10"
@@ -49,9 +53,17 @@ export default function EventosMarketingPage() {
             <label className="text-sm">Slug</label>
             <input name="slug" required defaultValue={editing?.slug || ''} className="w-full border rounded px-2.5 py-1.5 bg-background" />
           </div>
-          <div>
-            <label className="text-sm">Ícone (URL)</label>
-            <input name="icon_url" defaultValue={editing?.icon_url || ''} className="w-full border rounded px-2.5 py-1.5 bg-background" />
+          <div className="md:col-span-3">
+            <ImageUpload
+              label="Ícone do evento"
+              fieldName="icon_url"
+              tooltipText="Upload do ícone; a imagem é redimensionada e otimizada automaticamente."
+              folder="eventos-marketing"
+              value={iconUrl}
+              onChange={setIconUrl}
+              hint="PNG/JPG/WEBP, máx. 8MB. Redimensionado para 512px."
+              forceSize={512}
+            />
           </div>
         </div>
         <div>
@@ -108,7 +120,7 @@ export default function EventosMarketingPage() {
         </label>
         <div className="flex gap-2">
           <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">{editing ? 'Salvar' : 'Criar'}</button>
-          {editing && <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 border rounded-lg">Cancelar</button>}
+          {editing && <button type="button" onClick={() => { setEditing(null); setIconUrl('') }} className="px-4 py-2 border rounded-lg">Cancelar</button>}
         </div>
       </form>
 
