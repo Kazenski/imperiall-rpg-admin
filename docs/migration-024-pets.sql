@@ -1,4 +1,4 @@
-﻿-- MIGRATION 024: Pets
+-- MIGRATION 024: Pets
 
 CREATE TABLE IF NOT EXISTS pet_templates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

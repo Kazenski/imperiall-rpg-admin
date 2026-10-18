@@ -1,4 +1,4 @@
-﻿-- MIGRATION 025: Vassalos e Ações Manuais (Life Skills)
+-- MIGRATION 025: Vassalos e Ações Manuais (Life Skills)
 
 CREATE TABLE IF NOT EXISTS manual_actions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
