@@ -31,6 +31,7 @@ export default function PixelEditorPage() {
       ctx.imageSmoothingEnabled = false
       ctx.drawImage(img, 0, 0)
       URL.revokeObjectURL(url)
+      pixelate()
     }
     img.src = url
   }
@@ -120,7 +121,8 @@ export default function PixelEditorPage() {
       <p className="text-sm text-zinc-400">Carregue uma imagem, pixelize, pinte pixels e exporte/envie para usar em itens.</p>
 
       <div className="flex flex-wrap gap-3 items-center">
-        <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) loadImageToCanvas(f) }} />
+        <button type="button" onClick={() => document.getElementById('pixel-file')?.click()} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm">Selecionar imagem</button>
+        <input id="pixel-file" type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) loadImageToCanvas(f) }} />
         <label className="text-sm">Tamanho do pixel
           <input type="range" min={2} max={32} value={pixelSize} onChange={(e) => setPixelSize(Number(e.target.value))} className="ml-2" />
           <span className="ml-1 text-xs">{pixelSize}px</span>
