@@ -13,10 +13,29 @@ export default function PixelEditorPage() {
   const [selectedItem, setSelectedItem] = useState('')
   const [uploadedUrl, setUploadedUrl] = useState('')
   const [status, setStatus] = useState('')
+  const [gallery, setGallery] = useState<string[]>([])
+  const [loadingGallery, setLoadingGallery] = useState(false)
 
   useEffect(() => {
     listItems().then(setItems).catch(() => setItems([]))
+    loadGallery()
   }, [])
+
+  async function loadGallery() {
+    setLoadingGallery(true)
+    try {
+      const { data, error } = await supabase.storage.from('assets').list('pixel', { limit: 500 })
+      if (error) throw error
+      const urls = (data || [])
+        .filter((f) => f.name && !f.name.endsWith('/'))
+        .map((f) => supabase.storage.from('assets').getPublicUrl(`pixel/${f.name}`).data.publicUrl)
+      setGallery(urls)
+    } catch {
+      setGallery([])
+    } finally {
+      setLoadingGallery(false)
+    }
+  }
 
   function loadImageToCanvas(file: File) {
     const url = URL.createObjectURL(file)
@@ -142,6 +161,21 @@ export default function PixelEditorPage() {
         className="border border-zinc-700 max-w-full"
         style={{ imageRendering: 'pixelated' }}
       />
+
+      <div className="border rounded-xl p-4 bg-zinc-900/60 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-indigo-300">Galeria de Pixel Art ({gallery.length})</h3>
+          <button onClick={loadGallery} className="text-xs underline text-zinc-400">Atualizar</button>
+        </div>
+        {loadingGallery && <p className="text-xs text-zinc-500">Carregando...</p>}
+        <div className="grid grid-cols-6 md:grid-cols-10 gap-2 max-h-64 overflow-y-auto">
+          {gallery.map((url) => (
+            <a key={url} href={url} target="_blank" rel="noreferrer" className="border border-zinc-700 rounded overflow-hidden hover:ring-2 hover:ring-amber-400">
+              <img src={url} alt="pixel" className="w-full h-16 object-contain bg-zinc-800" />
+            </a>
+          ))}
+        </div>
+      </div>
 
       <div className="border rounded-xl p-4 bg-zinc-900/60 space-y-3">
         <h3 className="text-sm font-semibold text-indigo-300">Aplicar a um item</h3>

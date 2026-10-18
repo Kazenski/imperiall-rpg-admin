@@ -116,7 +116,26 @@ export function ImageUpload({ label, fieldName, tooltipText, folder, value, onCh
   const [error, setError] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [fileInfo, setFileInfo] = useState<string | null>(null)
+  const [showGallery, setShowGallery] = useState(false)
+  const [gallery, setGallery] = useState<string[]>([])
+  const [loadingGallery, setLoadingGallery] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  async function loadGallery() {
+    setLoadingGallery(true)
+    try {
+      const { data, error } = await supabase.storage.from('assets').list('pixel', { limit: 200 })
+      if (error) throw error
+      const urls = (data || [])
+        .filter((f) => f.name && !f.name.endsWith('/'))
+        .map((f) => supabase.storage.from('assets').getPublicUrl(`pixel/${f.name}`).data.publicUrl)
+      setGallery(urls)
+    } catch {
+      setGallery([])
+    } finally {
+      setLoadingGallery(false)
+    }
+  }
 
   async function uploadFile(file: File) {
     setError(null)
@@ -257,6 +276,33 @@ export function ImageUpload({ label, fieldName, tooltipText, folder, value, onCh
         )}
       </div>
       {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+
+      <div className="mt-2">
+        <button
+          type="button"
+          className="text-xs underline text-indigo-300"
+          onClick={() => { setShowGallery((v) => !v); if (!showGallery) loadGallery() }}
+        >
+          {showGallery ? 'Ocultar galeria Pixel Art' : 'Usar imagem da galeria Pixel Art'}
+        </button>
+        {showGallery && (
+          <div className="mt-2 grid grid-cols-6 gap-2 max-h-48 overflow-y-auto border border-zinc-700 rounded p-2">
+            {loadingGallery && <p className="text-xs text-zinc-500 col-span-6">Carregando...</p>}
+            {!loadingGallery && gallery.length === 0 && <p className="text-xs text-zinc-500 col-span-6">Nenhuma arte pixel encontrada.</p>}
+            {gallery.map((url) => (
+              <button
+                key={url}
+                type="button"
+                onClick={() => { onChange(url); setPreview(null) }}
+                className="border border-zinc-700 rounded overflow-hidden hover:ring-2 hover:ring-amber-400"
+                title={url}
+              >
+                <img src={url} alt="pixel" className="w-full h-12 object-contain bg-zinc-800" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       {/* input hidden com a URL final para o FormData do server action */}
       <input type="hidden" name={fieldName} value={value} readOnly className="hidden" />
     </div>
