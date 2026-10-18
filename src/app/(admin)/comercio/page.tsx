@@ -712,8 +712,13 @@ function Events() {
             </div>
           )
         })}
-      </div>
-
+  return (
+    <div className='border border-slate-800 rounded overflow-x-auto'>
+      <table className='w-full text-xs'>
+        <thead className='bg-slate-900 text-slate-400'>
+          <tr className='text-left'><Th>Quando</Th><Th>Tipo</Th><Th>Item</Th><Th>Qtd</Th><Th>Total</Th><Th>Loja</Th><Th>Rep. XP</Th></tr>
+        </thead>
+        <tbody>
           {rows.map((t) => (
             <tr key={t.id} className='border-t border-slate-800'>
               <Td className='text-slate-500'>{new Date(t.created_at).toLocaleString('pt-BR')}</Td>
@@ -721,14 +726,16 @@ function Events() {
               <Td>{t.items?.name ?? '—'}</Td>
               <Td>{t.quantity}</Td>
               <Td>{Number(t.total_price).toLocaleString('pt-BR')}g</Td>
+              <Td className='text-slate-400'>{t.shops?.name ?? '—'}</Td>
               <Td className='text-sky-300'>{t.reputation_xp_gained || 0}</Td>
             </tr>
           ))}
           {rows.length === 0 && <tr><td colSpan={7} className='text-center py-6 text-slate-500'>Nenhuma transação ainda.</td></tr>}
-        <tbody>
-      <table className="w-full text-xs">
-        <thead className="bg-slate-900 text-slate-400">
-          <tr className="text-left"><Th>Quando</Th><Th>Tipo</Th><Th>Item</Th><Th>Qtd</Th><Th>Total</Th><Th>Loja</Th><Th>Rep. XP</Th></tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
         </thead>
         <tbody>
 
