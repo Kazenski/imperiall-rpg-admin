@@ -425,9 +425,10 @@ export async function diffCounts(): Promise<{ table: string; prod: number; stagi
   const { prod, stag } = getSyncClients();
   const out: { table: string; prod: number; staging: number; missingInProd?: boolean }[] = [];
   for (const t of SYNC_TABLES) {
+    const countCol = t === 'spirit_xp_table' ? 'level' : 'id';
     const [p, s] = await Promise.all([
-      prod.from(t).select('id', { count: 'exact', head: true }),
-      stag.from(t).select('id', { count: 'exact', head: true }),
+      prod.from(t).select(countCol, { count: 'exact', head: true }),
+      stag.from(t).select(countCol, { count: 'exact', head: true }),
     ]);
     const prodMissing = Boolean(p.error && isMissingTableOrColumn(p.error));
     const stagMissing = Boolean(s.error && isMissingTableOrColumn(s.error));
