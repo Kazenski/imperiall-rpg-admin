@@ -16,6 +16,17 @@ export const SYNC_TABLES = [
   'character_skills', 'character_traits', 'skill_effects', 'item_effects',
   'recipe_materials', 'item_upgrade_levels', 'story_choices',
   'wave_mobs', 'loot_table_entries', 'item_upgrade_materials',
+  'floating_menus', 'natural_resources',
+  'merchants', 'shops', 'shop_items', 'commerce_events', 'commerce_event_items',
+  'spirit_weapons', 'spirit_weapon_skills', 'spirit_weapon_diet', 'spirit_level_bonuses', 'spirit_xp_table',
+  'pet_templates', 'pet_template_skills', 'pet_template_diet', 'pet_incubation_config',
+  'vassals', 'vassal_affinities', 'vassal_level_rules',
+  'manual_actions',
+  'support_categories', 'game_masters',
+  'marketing_events', 'quest_types', 'reward_chests', 'quests',
+  'hex_regions', 'hex_region_resources', 'hex_region_actions',
+  'tutorial_sequences', 'tutorial_steps',
+  'changelog_entries',
 ];
 
 export const TABLE_LABELS: Record<string, string> = {
@@ -29,6 +40,24 @@ export const TABLE_LABELS: Record<string, string> = {
   recipe_materials: 'Materiais da receita', item_upgrade_levels: 'Níveis de upgrade',
   story_choices: 'Escolhas', wave_mobs: 'Inimigos da onda',
   loot_table_entries: 'Drops', item_upgrade_materials: 'Materiais do upgrade',
+  floating_menus: 'Menus Flutuantes', natural_resources: 'Recursos Naturais',
+  merchants: 'Mercadores', shops: 'Lojas', shop_items: 'Itens de Loja',
+  commerce_events: 'Eventos de Comércio', commerce_event_items: 'Itens de Evento de Comércio',
+  spirit_weapons: 'Armas Espirituais', spirit_weapon_skills: 'Skills de Arma Espiritual',
+  spirit_weapon_diet: 'Dieta de Arma Espiritual', spirit_level_bonuses: 'Bônus de Nível Espiritual',
+  spirit_xp_table: 'Tabela de XP Espiritual',
+  pet_templates: 'Pets (Templates)', pet_template_skills: 'Skills de Pet',
+  pet_template_diet: 'Dieta de Pet', pet_incubation_config: 'Config de Incubação',
+  vassals: 'Vassalos', vassal_affinities: 'Afinidades de Vassalo',
+  vassal_level_rules: 'Regras de Nível de Vassalo',
+  manual_actions: 'Ações Manuais',
+  support_categories: 'Categorias de Suporte', game_masters: 'Game Masters',
+  marketing_events: 'Eventos de Marketing', quest_types: 'Tipos de Quest',
+  reward_chests: 'Baús de Recompensa', quests: 'Quests',
+  hex_regions: 'Regiões Hex', hex_region_resources: 'Recursos de Hex',
+  hex_region_actions: 'Ações de Hex',
+  tutorial_sequences: 'Sequências de Tutorial', tutorial_steps: 'Passos de Tutorial',
+  changelog_entries: 'Changelog Geral',
 };
 
 /**
