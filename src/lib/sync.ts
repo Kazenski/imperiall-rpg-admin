@@ -338,9 +338,11 @@ async function readAll(client: SupabaseClient, table: string) {
   return rows;
 }
 
+const NO_ID_TABLES = new Set(['spirit_xp_table', 'vassal_level_rules']);
+
 async function wipe(client: SupabaseClient, table: string) {
   let query;
-  if (table === 'spirit_xp_table') {
+  if (NO_ID_TABLES.has(table)) {
     query = client.from(table).delete().gte('level', 0);
   } else {
     query = client.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -425,7 +427,7 @@ export async function diffCounts(): Promise<{ table: string; prod: number; stagi
   const { prod, stag } = getSyncClients();
   const out: { table: string; prod: number; staging: number; missingInProd?: boolean }[] = [];
   for (const t of SYNC_TABLES) {
-    const countCol = t === 'spirit_xp_table' ? 'level' : 'id';
+    const countCol = NO_ID_TABLES.has(t) ? 'level' : 'id';
     const [p, s] = await Promise.all([
       prod.from(t).select(countCol, { count: 'exact', head: true }),
       stag.from(t).select(countCol, { count: 'exact', head: true }),
@@ -452,7 +454,7 @@ async function insertRows(client: SupabaseClient, table: string, rows: any[], up
     fixups = rows.filter((n) => n.requires_node_id).map((n) => ({ id: n.id, requires_node_id: n.requires_node_id }));
     payload = rows.map((n) => ({ ...n, requires_node_id: null }));
   }
-  const conflictCol = table === 'spirit_xp_table' ? 'level' : 'id';
+  const conflictCol = NO_ID_TABLES.has(table) ? 'level' : 'id';
   const query = upsert
     ? client.from(table).upsert(payload, { onConflict: conflictCol })
     : client.from(table).insert(payload);
