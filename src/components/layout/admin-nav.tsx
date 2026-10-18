@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   Package, Skull, Zap, Map, Waves, Gift, UserCheck, BookOpen,
   Sparkles, Swords, Network, Star, Hammer, Wrench, RefreshCw, Users, HelpCircle,
-  BarChart3, Store, Flame, PawPrint, Shield, Target, CalendarClock,
+  BarChart3, Store, Flame, PawPrint, Shield, Target, CalendarClock, ScrollText,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -36,6 +36,7 @@ const NAV_ITEMS = [
   { href: '/usuarios', label: 'Usuários', icon: Users, color: 'text-pink-400 border-pink-500/40 bg-pink-500/10' },
   { href: '/manutencao', label: 'Manutenção', icon: Wrench, color: 'text-red-300 border-red-500/40 bg-red-500/10' },
   { href: '/atualizacoes', label: 'Atualizações', icon: Sparkles, color: 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10' },
+  { href: '/changelog-geral', label: 'Changelog Geral', icon: ScrollText, color: 'text-blue-300 border-blue-500/40 bg-blue-500/10' },
   { href: '/guia', label: 'Guia', icon: HelpCircle, color: 'text-zinc-300 border-zinc-500/40 bg-zinc-500/10' },
 ]
 
