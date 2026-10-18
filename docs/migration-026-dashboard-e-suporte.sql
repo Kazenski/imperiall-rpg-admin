@@ -1,4 +1,4 @@
-﻿-- MIGRATION 026: Dashboard Melhorado e Suporte
+-- MIGRATION 026: Dashboard Melhorado e Suporte
 
 CREATE TABLE IF NOT EXISTS support_categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
