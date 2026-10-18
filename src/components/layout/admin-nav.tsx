@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   Package, Skull, Zap, Map, Waves, Gift, UserCheck, BookOpen,
   Sparkles, Swords, Network, Star, Hammer, Wrench, RefreshCw, Users, HelpCircle,
-  BarChart3, Store, Flame, PawPrint, Shield,
+  BarChart3, Store, Flame, PawPrint, Shield, Target, CalendarClock, ScrollText, Grid3x3, Hexagon,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -19,12 +19,16 @@ const NAV_ITEMS = [
   { href: '/npcs', label: 'NPCs', icon: UserCheck, color: 'text-teal-400 border-teal-500/40 bg-teal-500/10' },
   { href: '/historias', label: 'Histórias', icon: BookOpen, color: 'text-indigo-400 border-indigo-500/40 bg-indigo-500/10' },
   { href: '/efeitos', label: 'Efeitos', icon: Sparkles, color: 'text-purple-400 border-purple-500/40 bg-purple-500/10' },
+  { href: '/pixel-editor', label: 'Pixel Art', icon: Grid3x3, color: 'text-green-300 border-green-500/40 bg-green-500/10' },
   { href: '/personagens', label: 'Heróis', icon: Swords, color: 'text-orange-400 border-orange-500/40 bg-orange-500/10' },
   { href: '/arvore', label: 'Árvore', icon: Network, color: 'text-lime-400 border-lime-500/40 bg-lime-500/10' },
   { href: '/constelacoes', label: 'Constelações', icon: Star, color: 'text-fuchsia-400 border-fuchsia-500/40 bg-fuchsia-500/10' },
   { href: '/profissoes', label: 'Profissões', icon: Wrench, color: 'text-amber-300 border-amber-500/40 bg-amber-500/10' },
   { href: '/receitas', label: 'Oficina / Craft', icon: Hammer, color: 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10' },
   { href: '/comercio', label: 'Comércio', icon: Store, color: 'text-yellow-300 border-yellow-500/40 bg-yellow-500/10' },
+  { href: '/hexcrawl', label: 'Exploração Hex', icon: Hexagon, color: 'text-teal-300 border-teal-500/40 bg-teal-500/10' },
+  { href: '/eventos-marketing', label: 'Eventos Marketing', icon: CalendarClock, color: 'text-pink-300 border-pink-500/40 bg-pink-500/10' },
+  { href: '/quests', label: 'Quests', icon: Target, color: 'text-green-300 border-green-500/40 bg-green-500/10' },
   { href: '/arma-espiritual', label: 'Arma Espiritual', icon: Flame, color: 'text-orange-400 border-orange-500/40 bg-orange-500/10' },
   { href: '/pets', label: 'Pets', icon: PawPrint, color: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' },
   { href: '/vassalos', label: 'Vassalos', icon: Shield, color: 'text-purple-400 border-purple-500/40 bg-purple-500/10' },
@@ -34,6 +38,7 @@ const NAV_ITEMS = [
   { href: '/usuarios', label: 'Usuários', icon: Users, color: 'text-pink-400 border-pink-500/40 bg-pink-500/10' },
   { href: '/manutencao', label: 'Manutenção', icon: Wrench, color: 'text-red-300 border-red-500/40 bg-red-500/10' },
   { href: '/atualizacoes', label: 'Atualizações', icon: Sparkles, color: 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10' },
+  { href: '/changelog-geral', label: 'Changelog Geral', icon: ScrollText, color: 'text-blue-300 border-blue-500/40 bg-blue-500/10' },
   { href: '/guia', label: 'Guia', icon: HelpCircle, color: 'text-zinc-300 border-zinc-500/40 bg-zinc-500/10' },
 ]
 

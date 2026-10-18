@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition, useMemo } from 'react'
 import { listUsers, setUserRole, listPunishments, punishUser, revokePunishment } from '@/lib/actions/users'
+import { listUserRoleTypes, createUserRoleType, deleteUserRoleType } from '@/lib/actions/user-role-types'
 import { Tooltip } from '@/components/ui/tooltip'
 import { DetailModal, DetailRow } from '@/components/ui/detail-modal'
 import { Search, ShieldAlert, VolumeX, Ban, Undo2, Crown, Eye } from 'lucide-react'
@@ -22,6 +23,7 @@ function isActive(date?: string | null) {
 
 export default function UsuariosPage() {
   const [users, setUsers] = useState<any[]>([])
+  const [roleTypes, setRoleTypes] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [viewing, setViewing] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
@@ -54,7 +56,10 @@ export default function UsuariosPage() {
   const muted = users.filter((u) => isActive(u.muted_until)).length
   const banned = users.filter((u) => isActive(u.banned_until)).length
 
-  const load = (s = search) => listUsers(s).then(setUsers).catch(() => setUsers([]))
+  const load = (s = search) => {
+    listUsers(s).then(setUsers).catch(() => setUsers([]))
+    listUserRoleTypes().then(setRoleTypes).catch(() => setRoleTypes([]))
+  }
   useEffect(() => { load('') }, [])
 
   const openDetail = (user: any) => {
@@ -213,6 +218,25 @@ export default function UsuariosPage() {
           </form>
         </DetailModal>
       )}
-    </div>
+    
+      <div className="mt-8 border rounded-xl p-4 bg-zinc-900/60">
+        <h3 className="font-semibold text-amber-300 mb-3">Tipos de Usuário (GM, Suporte, etc.)</h3>
+        <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target as HTMLFormElement); await createUserRoleType(fd); (e.target as HTMLFormElement).reset(); load(); }} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+          <input name="name" placeholder="Nome" required className="border rounded px-2.5 py-1.5 bg-background" />
+          <input name="slug" placeholder="slug" required className="border rounded px-2.5 py-1.5 bg-background" />
+          <input name="description" placeholder="Descrição" className="border rounded px-2.5 py-1.5 bg-background" />
+          <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">Criar tipo</button>
+        </form>
+        <div className="flex flex-wrap gap-2">
+          {roleTypes.map((r) => (
+            <div key={r.id} className="flex items-center gap-2 border rounded-lg px-2.5 py-1.5 bg-zinc-800/60">
+              <span className="text-xs text-zinc-200">{r.name}</span>
+              <button onClick={async () => { if (confirm('Excluir tipo?')) { await deleteUserRoleType(r.id); load(); } }} className="text-xs text-red-300">✕</button>
+            </div>
+          ))}
+          {roleTypes.length === 0 && <span className="text-xs text-zinc-500">Nenhum tipo cadastrado.</span>}
+        </div>
+      </div>
+</div>
   )
 }
