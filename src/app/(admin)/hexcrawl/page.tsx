@@ -26,7 +26,7 @@ export default function HexcrawlPage() {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-2xl font-semibold text-amber-400">Hexcrawl (Áreas)</h2>
+      <h2 className="text-2xl font-semibold text-amber-400">Exploração Hex (Áreas)</h2>
 
       <form
         onSubmit={async (e) => {

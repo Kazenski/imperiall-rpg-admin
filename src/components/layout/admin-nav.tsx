@@ -26,7 +26,7 @@ const NAV_ITEMS = [
   { href: '/profissoes', label: 'Profissões', icon: Wrench, color: 'text-amber-300 border-amber-500/40 bg-amber-500/10' },
   { href: '/receitas', label: 'Oficina / Craft', icon: Hammer, color: 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10' },
   { href: '/comercio', label: 'Comércio', icon: Store, color: 'text-yellow-300 border-yellow-500/40 bg-yellow-500/10' },
-  { href: '/hexcrawl', label: 'Hexcrawl', icon: Hexagon, color: 'text-teal-300 border-teal-500/40 bg-teal-500/10' },
+  { href: '/hexcrawl', label: 'Exploração Hex', icon: Hexagon, color: 'text-teal-300 border-teal-500/40 bg-teal-500/10' },
   { href: '/eventos-marketing', label: 'Eventos Marketing', icon: CalendarClock, color: 'text-pink-300 border-pink-500/40 bg-pink-500/10' },
   { href: '/quests', label: 'Quests', icon: Target, color: 'text-green-300 border-green-500/40 bg-green-500/10' },
   { href: '/arma-espiritual', label: 'Arma Espiritual', icon: Flame, color: 'text-orange-400 border-orange-500/40 bg-orange-500/10' },
