@@ -146,7 +146,21 @@ function ActionForm({ editing, onDone }: any) {
       )}
 
       {(!editing || show) && (
-        <div className="border border-slate-700 rounded bg-slate-900/60 p-4 space-y-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            const fd = new FormData(e.target as HTMLFormElement)
+            start(async () => {
+              setErr('')
+              try {
+                if (editing) await updateManualAction(editing.id, fd)
+                else await createManualAction(fd)
+                setShow(false)
+                onDone()
+              } catch (ex: any) { setErr(ex?.message ?? String(ex)) }
+            })
+          }}
+          className="border border-slate-700 rounded bg-slate-900/60 p-4 space-y-3">
           <h3 className="text-lg font-bold text-amber-400">{editing ? 'Editar' : 'Nova'} Ação Manual</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -185,10 +199,10 @@ function ActionForm({ editing, onDone }: any) {
           </label>
           {err && <p className="text-red-400 text-sm">{err}</p>}
           <div className="flex gap-2">
-            <button className="px-4 py-2 rounded bg-amber-500 text-slate-900 font-medium hover:bg-amber-400 transition">Salvar</button>
+            <button type="submit" className="px-4 py-2 rounded bg-amber-500 text-slate-900 font-medium hover:bg-amber-400 transition">Salvar</button>
             {editing && <button type="button" onClick={() => setShow(false)} className="px-4 py-2 border border-slate-600 rounded hover:bg-slate-800 transition">Cancelar</button>}
           </div>
-        </div>
+        </form>
       )}
     </div>
   )
@@ -275,7 +289,12 @@ function InteractionsTab({ action, onDone }: any) {
       </div>
 
       {show && (
-        <div className="border border-slate-700 rounded bg-slate-900/60 p-4 space-y-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            submit(new FormData(e.target as HTMLFormElement))
+          }}
+          className="border border-slate-700 rounded bg-slate-900/60 p-4 space-y-3">
           <h3 className="text-lg font-bold text-amber-400">{editing ? 'Editar' : 'Nova'} Interação</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -304,10 +323,10 @@ function InteractionsTab({ action, onDone }: any) {
           </div>
           {err && <p className="text-red-400 text-sm">{err}</p>}
           <div className="flex gap-2">
-            <button className="px-4 py-2 rounded bg-amber-500 text-slate-900 font-medium hover:bg-amber-400 transition">Salvar</button>
+            <button type="submit" className="px-4 py-2 rounded bg-amber-500 text-slate-900 font-medium hover:bg-amber-400 transition">Salvar</button>
             <button type="button" onClick={() => setShow(false)} className="px-4 py-2 border border-slate-600 rounded hover:bg-slate-800 transition">Cancelar</button>
           </div>
-        </div>
+        </form>
       )}
     </div>
   )
